@@ -140,7 +140,7 @@ export default function Dashboard({ user, trips, usersList, onNavigateToView }: 
   const totalWeeklyChartSum = chartData.reduce((sum, r) => sum + r.value, 0);
 
   return (
-    <div className="bg-slate-50 pt-20">
+    <div className="bg-slate-50 pt-20 pb-24">
       {/* ── Header ──────────────────────────────────────────── */}
       <div className="bg-white border-b border-slate-100 px-5 pt-5 pb-4">
         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">
@@ -403,7 +403,7 @@ export default function Dashboard({ user, trips, usersList, onNavigateToView }: 
             )}
           </div>
         </section>
-        <div className="h-24" aria-hidden="true" />
+
       </div>
     </div>
   );
