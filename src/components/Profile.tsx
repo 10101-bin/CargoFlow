@@ -327,7 +327,7 @@ export default function Profile({ user, trips, onUpdateProfile, onDeposit, onLog
   };
 
   return (
-    <div className="bg-background min-h-screen pb-32 pt-20 font-sans antialiased">
+    <div className="bg-background min-h-screen pt-20 font-sans antialiased">
       <main className="px-6 max-w-lg mx-auto flex flex-col gap-6">
         
         {/* Profile Header Section */}
@@ -755,6 +755,8 @@ export default function Profile({ user, trips, onUpdateProfile, onDeposit, onLog
             </div>
           </button>
         </section>
+
+        <div className="h-24" aria-hidden="true" />
 
       </main>
 
