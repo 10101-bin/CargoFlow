@@ -1013,7 +1013,7 @@ export default function App() {
           className={`flex flex-col ${
             ['home', 'settings'].includes(view)
               ? 'flex-1 overflow-hidden'
-              : ['activity', 'chat', 'profile'].includes(view)
+              : ['activity', 'chat', 'dashboard', 'profile'].includes(view)
               ? 'flex-1 overflow-y-auto pb-28'
               : 'min-h-screen'
           }`}

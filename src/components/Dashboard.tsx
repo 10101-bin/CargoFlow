@@ -140,9 +140,9 @@ export default function Dashboard({ user, trips, usersList, onNavigateToView }: 
   const totalWeeklyChartSum = chartData.reduce((sum, r) => sum + r.value, 0);
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 pt-20">
+    <div className="bg-slate-50">
       {/* ── Header ──────────────────────────────────────────── */}
-      <div className="flex-none bg-white border-b border-slate-100 px-5 pt-5 pb-4">
+      <div className="bg-white border-b border-slate-100 px-5 pt-5 pb-4">
         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">
           {user.role === 'admin' ? 'PANEL DE CONTROL GENERAL' : 'HISTORIAL FINANCIERO'}
         </p>
@@ -173,8 +173,8 @@ export default function Dashboard({ user, trips, usersList, onNavigateToView }: 
         </div>
       </div>
 
-      {/* ── Scrollable Content ───────────────────────────────── */}
-      <div className="flex-1 min-h-0 overflow-y-auto pb-28 px-4 pt-4 flex flex-col gap-4">
+      {/* ── Content ─────────────────────────────────────────── */}
+      <div className="px-4 pt-4 flex flex-col gap-4">
         
         {/* ── 1. CONDUCTOR VIEW ───────────────────────────────── */}
         {user.role === 'conductor' && (
