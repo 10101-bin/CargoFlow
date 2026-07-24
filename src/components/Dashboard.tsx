@@ -403,7 +403,7 @@ export default function Dashboard({ user, trips, usersList, onNavigateToView }: 
             )}
           </div>
         </section>
-        <div className="h-24" aria-hidden="true" />
+        <div className="h-1" aria-hidden="true" />
       </div>
     </div>
   );

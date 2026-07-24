@@ -389,7 +389,7 @@ export default function Activity({ user, trips, usersList = [], onNavigateToChat
               );
             })
           )}
-          <div className="h-24" aria-hidden="true" />
+          <div className="h-1" aria-hidden="true" />
         </div>
       </main>
     </div>

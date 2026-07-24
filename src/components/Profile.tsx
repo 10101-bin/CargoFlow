@@ -756,7 +756,7 @@ export default function Profile({ user, trips, onUpdateProfile, onDeposit, onLog
           </button>
         </section>
 
-        <div className="h-24" aria-hidden="true" />
+        <div className="h-1" aria-hidden="true" />
 
       </main>
 
