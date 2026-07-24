@@ -505,7 +505,7 @@ export default function Settings({ user, onBack, onLogout, onInstallApp, onShare
   ];
 
   return (
-    <div className="flex flex-col h-full bg-slate-50">
+    <div className="flex flex-col h-full bg-slate-50 pt-20">
       {/* ── Header ──────────────────────────────────────────── */}
       <div className="flex-none bg-white border-b border-slate-100 px-4 pt-5 pb-4">
         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-1">
