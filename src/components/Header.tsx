@@ -20,12 +20,13 @@ import {
   Zap
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { UserProfile } from '../types';
+import { UserProfile, Trip } from '../types';
 import CargoFlowLogo from './CargoFlowLogo';
 import { notify, scheduleNotification } from '../services/notificationService';
 
 interface HeaderProps {
   user: UserProfile;
+  trips: Trip[];
   linkedAccounts?: UserProfile[];
   onNavigateToView: (view: 'home' | 'activity' | 'chat' | 'profile' | 'settings') => void;
   onUpdateProfile?: (updates: Partial<UserProfile>) => void;
@@ -37,13 +38,14 @@ interface HeaderProps {
 
 export default function Header({ 
   user, 
+  trips,
   linkedAccounts = [], 
   onNavigateToView,
   onUpdateProfile,
   onLogout, 
   onAddAccount, 
   onSwitchAccount, 
-  unreadCount = 3 
+  unreadCount = 0 
 }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -53,6 +55,38 @@ export default function Header({
   const [quickThemes, setQuickThemes] = useState<string[]>(['dia', 'cyber', 'kilo']);
   // Local state for immediate UI feedback on availability toggle
   const [isAvailable, setIsAvailable] = useState(user.isAvailable ?? true);
+
+  // Calculate rating statistics
+  const getRatingStats = () => {
+    let ratedTrips = [];
+    if (user.role === 'conductor') {
+      ratedTrips = trips.filter(t => t.conductorId === user.email && t.ratedByCliente && t.clienteRating);
+      const totalStars = ratedTrips.reduce((acc, t) => acc + (t.clienteRating?.stars || 0), 0);
+      return { count: ratedTrips.length, totalStars };
+    } else if (user.role === 'cliente') {
+      ratedTrips = trips.filter(t => t.clienteId === user.email && t.ratedByConductor && t.conductorRating);
+      const totalStars = ratedTrips.reduce((acc, t) => acc + (t.conductorRating?.stars || 0), 0);
+      return { count: ratedTrips.length, totalStars };
+    }
+    return { count: 0, totalStars: 0 };
+  };
+
+  const ratingStats = getRatingStats();
+  const displayStarsVal = ratingStats.totalStars || (user.rating ? Math.round(user.rating * (ratingStats.count || 1)) : 5);
+
+  // States and refs for the flying star animation
+  const [animatingStars, setAnimatingStars] = useState<number | null>(null);
+  const [capsuleScale, setCapsuleScale] = useState(1);
+  const prevStarsRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const currentStars = ratingStats.totalStars || (user.rating ? Math.round(user.rating * (ratingStats.count || 1)) : 5);
+    if (prevStarsRef.current !== null && currentStars > prevStarsRef.current) {
+      const diff = currentStars - prevStarsRef.current;
+      setAnimatingStars(diff);
+    }
+    prevStarsRef.current = currentStars;
+  }, [trips, user.rating]);
 
   // Sync state if user prop changes
   useEffect(() => {
@@ -440,7 +474,9 @@ export default function Header({
 
           {/* Profile Capsule Button (Google Avatar + Name + Role Badge + Chevron) */}
           <div className="relative min-w-0" ref={menuRef}>
-            <button
+            <motion.button
+              animate={{ scale: capsuleScale }}
+              transition={{ type: 'spring', stiffness: 350, damping: 12 }}
               onClick={() => {
                 setIsMenuOpen(!isMenuOpen);
                 setIsNotificationsOpen(false);
@@ -464,13 +500,19 @@ export default function Header({
                 </span>
               </div>
 
-              {/* Chevron */}
-              {isMenuOpen ? (
-                <ChevronUp size={14} className="text-primary-container flex-shrink-0" />
-              ) : (
-                <ChevronDown size={14} className="text-outline flex-shrink-0" />
-              )}
-            </button>
+              {/* Stars Badge stacked vertically above Chevron */}
+              <div className="flex flex-col items-center justify-center pl-1.5 border-l border-slate-200/60 ml-0.5 min-w-[28px] select-none">
+                <div className="flex items-center gap-0.5 px-1 py-0.2 bg-amber-500 text-amber-950 font-black text-[9px] rounded-full border border-amber-400 leading-none shadow-sm mb-0.5">
+                  <Star size={8} fill="currentColor" className="text-amber-950" />
+                  <span className="text-[8px] leading-none">{displayStarsVal}</span>
+                </div>
+                {isMenuOpen ? (
+                  <ChevronUp size={10} className="text-primary-container leading-none" />
+                ) : (
+                  <ChevronDown size={10} className="text-outline leading-none" />
+                )}
+              </div>
+            </motion.button>
             {/* Profile Dropdown Menu */}
             {isMenuOpen && (
               <div 
@@ -927,6 +969,43 @@ export default function Header({
             </div>
           </motion.div>
         </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Flying Star Animation */}
+      <AnimatePresence>
+        {animatingStars !== null && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0, x: '-50%', y: '-50%' }}
+            animate={[
+              { scale: 1.5, opacity: 1, x: '-50%', y: '-50%', transition: { duration: 0.5, type: 'spring' } },
+              { 
+                scale: 0.3, 
+                opacity: 0.8, 
+                x: 'calc(50vw - 120px)', // Flies directly toward profile capsule!
+                y: 'calc(-50vh + 32px)', 
+                transition: { delay: 1.2, duration: 0.8, ease: 'easeInOut' } 
+              }
+            ]}
+            exit={{ scale: 0, opacity: 0 }}
+            onAnimationComplete={() => {
+              // Wait for the flight to reach the target capsule (1.2s delay + 0.8s flight = 2s)
+              setTimeout(() => {
+                setAnimatingStars(null);
+                setCapsuleScale(1.25);
+                setTimeout(() => setCapsuleScale(1), 200);
+              }, 1800);
+            }}
+            className="fixed top-1/2 left-1/2 z-[9999] pointer-events-none"
+          >
+            <div className="flex flex-col items-center justify-center bg-gradient-to-b from-amber-300 via-amber-500 to-yellow-600 p-6 rounded-full shadow-[0_0_50px_rgba(245,158,11,0.6)] border-4 border-amber-200">
+              <Star size={64} fill="currentColor" className="text-white drop-shadow-md animate-pulse" />
+              <span className="text-2xl font-black text-amber-950 mt-1">+{animatingStars} ★</span>
+              <span className="text-[10px] uppercase font-black tracking-widest text-amber-900 bg-white/40 px-2.5 py-0.5 rounded-full mt-1.5 leading-none">
+                ¡Calificación Recibida!
+              </span>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </>

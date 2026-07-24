@@ -1089,6 +1089,7 @@ export default function App() {
         <div className="flex-none">
           <Header
             user={user}
+            trips={trips}
             linkedAccounts={linkedAccounts}
             onNavigateToView={handleViewChange}
             onUpdateProfile={handleUpdateProfile}

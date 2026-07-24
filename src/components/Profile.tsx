@@ -327,7 +327,7 @@ export default function Profile({ user, trips, onUpdateProfile, onDeposit, onLog
   };
 
   return (
-    <div className="bg-background min-h-screen pb-[88px] pt-20 font-sans antialiased">
+    <div className="bg-background min-h-screen pb-36 pt-20 font-sans antialiased">
       <main className="px-6 max-w-lg mx-auto flex flex-col gap-6">
         
         {/* Profile Header Section */}
@@ -362,7 +362,7 @@ export default function Profile({ user, trips, onUpdateProfile, onDeposit, onLog
             <span className="w-1 h-1 rounded-full bg-outline-variant"></span>
             <Star size={12} className="text-amber-500" fill="currentColor" />
             <span className="text-xs font-bold text-on-surface">
-              {user.rating} {ratingStats.count > 0 && `(${ratingStats.totalStars}★ en ${ratingStats.count} viajes)`}
+              {ratingStats.totalStars || (user.rating ? Math.round(user.rating * (ratingStats.count || 1)) : 5)}★ en {ratingStats.count || 1} { (ratingStats.count || 1) === 1 ? 'viaje' : 'viajes' }
             </span>
           </div>
 
