@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
-import { Home, Truck, MessageSquare, User } from 'lucide-react';
+import { Home, Truck, MessageSquare, User, BarChart3 } from 'lucide-react';
 
 interface BottomNavProps {
-  currentView: 'home' | 'activity' | 'chat' | 'profile';
-  onViewChange: (view: 'home' | 'activity' | 'chat' | 'profile') => void;
+  currentView: 'home' | 'activity' | 'chat' | 'dashboard' | 'profile';
+  onViewChange: (view: 'home' | 'activity' | 'chat' | 'dashboard' | 'profile') => void;
   unreadChatCount?: number;
+  userRole?: 'cliente' | 'conductor' | 'admin';
 }
 
 const ACCENT = '#0b224d';
 
-export default function BottomNav({ currentView, onViewChange, unreadChatCount = 0 }: BottomNavProps) {
+export default function BottomNav({ currentView, onViewChange, unreadChatCount = 0, userRole = 'cliente' }: BottomNavProps) {
   const [animatingId, setAnimatingId] = useState<string | null>(currentView);
 
   useEffect(() => {
@@ -21,15 +22,22 @@ export default function BottomNav({ currentView, onViewChange, unreadChatCount =
     return () => clearTimeout(timer);
   }, [currentView]);
 
+  const getDashboardLabel = () => {
+    if (userRole === 'admin') return 'Gestión';
+    if (userRole === 'conductor') return 'Ganancias';
+    return 'Reportes';
+  };
+
   const navItems = [
     { id: 'home' as const, label: 'Inicio', icon: Home },
     { id: 'activity' as const, label: 'Actividad', icon: Truck },
+    { id: 'dashboard' as const, label: getDashboardLabel(), icon: BarChart3 },
     { id: 'chat' as const, label: 'Chat', icon: MessageSquare, badge: unreadChatCount > 0 },
     { id: 'profile' as const, label: 'Perfil', icon: User },
   ];
 
   return (
-    <nav className="fixed bottom-3 left-1/2 -translate-x-1/2 z-40 rounded-[28px] glass-nav-container h-16 px-4 flex justify-around items-center w-[calc(100%-24px)] max-w-[360px]">
+    <nav className="fixed bottom-3 left-1/2 -translate-x-1/2 z-40 rounded-[28px] glass-nav-container h-16 px-2 flex justify-around items-center w-[calc(100%-16px)] max-w-[385px]">
       {navItems.map((item) => {
         const Icon = item.icon;
         const isActive = currentView === item.id;
@@ -50,7 +58,7 @@ export default function BottomNav({ currentView, onViewChange, unreadChatCount =
             */}
             <div
               className={[
-                'flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-2xl transition-colors duration-200',
+                'flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-2xl transition-colors duration-200',
                 isActive ? 'nav-item-settled' : '',
                 isPushing ? 'anim-push-and-settle' : '',
               ].join(' ')}

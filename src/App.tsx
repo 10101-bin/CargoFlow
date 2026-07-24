@@ -7,6 +7,7 @@ import Activity from './components/Activity';
 import Chat from './components/Chat';
 import Profile from './components/Profile';
 import Settings from './components/Settings';
+import Dashboard from './components/Dashboard';
 import BottomNav from './components/BottomNav';
 import Header from './components/Header';
 import SplashScreen from './components/SplashScreen';
@@ -48,7 +49,7 @@ const INITIAL_CHAT_MESSAGES: ChatMessage[] = [
 ];
 
 export default function App() {
-  const [view, setView] = useState<'login' | 'complete_profile' | 'home' | 'activity' | 'chat' | 'profile' | 'settings'>('login');
+  const [view, setView] = useState<'login' | 'complete_profile' | 'home' | 'activity' | 'chat' | 'dashboard' | 'profile' | 'settings'>('login');
   
   // Splash Screen State
   const [isSplashActive, setIsSplashActive] = useState<boolean>(true);
@@ -454,7 +455,7 @@ export default function App() {
   };
 
   // Bottom Navigation View Change
-  const handleViewChange = (newView: 'home' | 'activity' | 'chat' | 'profile') => {
+  const handleViewChange = (newView: 'home' | 'activity' | 'chat' | 'dashboard' | 'profile') => {
     setView(newView);
   };
 
@@ -1101,6 +1102,15 @@ export default function App() {
             />
           )}
 
+          {view === 'dashboard' && (
+            <Dashboard 
+              user={user}
+              trips={trips}
+              usersList={usersList}
+              onNavigateToView={handleViewChange}
+            />
+          )}
+
           {view === 'profile' && (
             <Profile 
               user={user} 
@@ -1186,11 +1196,12 @@ export default function App() {
       </AnimatePresence>
 
       {/* Render Bottom navigation on main dashboards */}
-      {['home', 'activity', 'chat', 'profile', 'settings'].includes(view) && (
+      {['home', 'activity', 'chat', 'dashboard', 'profile', 'settings'].includes(view) && (
         <BottomNav 
           currentView={view as any} 
           onViewChange={handleViewChange} 
           unreadChatCount={unreadChatCount}
+          userRole={user.role}
         />
       )}
     </div>
