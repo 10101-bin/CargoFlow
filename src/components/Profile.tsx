@@ -756,7 +756,10 @@ export default function Profile({ user, trips, onUpdateProfile, onDeposit, onLog
           </button>
         </section>
 
-
+        {/* BottomNav clearance spacer — must live inside <main> flex flow
+            BottomNav = h-16 (64px) + bottom-3 (12px) = 76px from viewport bottom
+            spacer = 96px gives 20px breathing room above the nav */}
+        <div className="h-24" aria-hidden="true" />
 
       </main>
 
