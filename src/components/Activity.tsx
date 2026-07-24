@@ -55,7 +55,7 @@ export default function Activity({ user, trips, usersList = [], onNavigateToChat
   };
 
   return (
-    <div className="bg-background min-h-screen pb-[88px] pt-20">
+    <div className="bg-background min-h-screen pb-28 pt-20">
       {/* Top App Bar */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm flex items-center justify-between px-6 h-16">
         <button className="text-primary-container p-2 -ml-2 rounded-full hover:bg-surface-container transition-colors">

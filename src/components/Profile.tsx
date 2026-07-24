@@ -327,7 +327,7 @@ export default function Profile({ user, trips, onUpdateProfile, onDeposit, onLog
   };
 
   return (
-    <div className="bg-background min-h-screen pb-36 pt-20 font-sans antialiased">
+    <div className="bg-background min-h-screen pb-[88px] pt-20 font-sans antialiased">
       <main className="px-6 max-w-lg mx-auto flex flex-col gap-6">
         
         {/* Profile Header Section */}
@@ -756,8 +756,7 @@ export default function Profile({ user, trips, onUpdateProfile, onDeposit, onLog
           </button>
         </section>
 
-        {/* Space buffer to allow scrolling completely above BottomNav */}
-        <div className="h-20" />
+
 
       </main>
 
