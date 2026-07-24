@@ -427,7 +427,7 @@ export default function Home({
       <div className="absolute top-20 left-4 right-4 z-20">
         {user.role === 'conductor' ? (
           /* DRIVER TOP CARD */
-          <div className="relative w-full bg-gradient-to-r from-slate-900 via-slate-800 to-[#0A1220] text-white rounded-2xl p-4 shadow-[0px_10px_35px_rgba(0,0,0,0.3)] border border-slate-700/60 flex flex-col gap-3 overflow-hidden">
+          <div className="relative w-full bg-gradient-to-br from-[#09152b] via-[#0b224d] to-[#041029] text-white rounded-2xl p-4 shadow-[0px_10px_35px_rgba(11,34,77,0.5)] border border-blue-500/20 flex flex-col gap-3 overflow-hidden">
             {/* Scanlines overlay — Login style */}
             <div className="absolute inset-0 pointer-events-none rounded-2xl opacity-10 bg-[linear-gradient(to_bottom,transparent_50%,rgba(0,0,0,0.8)_50%)] bg-[length:100%_4px]" />
 
