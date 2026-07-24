@@ -741,10 +741,8 @@ export default function Profile({ user, trips, onUpdateProfile, onDeposit, onLog
             </div>
             <span className="text-outline-variant group-hover:text-primary transition-transform group-hover:translate-x-0.5">▶</span>
           </button>
-        </section>
 
-        {/* Logout Section */}
-        <section className="mt-4">
+          {/* Logout */}
           <button 
             onClick={onLogout}
             className="flex items-center justify-between w-full p-4 bg-white rounded-2xl shadow-[0px_4px_20px_rgba(0,0,0,0.02)] border border-surface-container hover:bg-red-50 text-red-600 hover:border-red-200 transition-colors group cursor-pointer"
@@ -753,10 +751,13 @@ export default function Profile({ user, trips, onUpdateProfile, onDeposit, onLog
               <div className="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-red-500 group-hover:bg-red-600 group-hover:text-white transition-colors">
                 <LogOut size={18} />
               </div>
-              <span className="text-sm font-extrabold">Cerrar Sesión</span>
+              <span className="text-sm font-extrabold text-red-600">Cerrar Sesión</span>
             </div>
           </button>
         </section>
+
+        {/* Space buffer to allow scrolling completely above BottomNav */}
+        <div className="h-20" />
 
       </main>
 
