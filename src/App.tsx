@@ -1036,6 +1036,7 @@ export default function App() {
             <Home 
               user={user} 
               trips={trips}
+              usersList={usersList}
               pendingTrip={trips.find(t => t.status === 'PENDIENTE')}
               editingTrip={editingTrip}
               onCloseEditing={() => setEditingTrip(null)}

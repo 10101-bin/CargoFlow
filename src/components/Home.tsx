@@ -5,6 +5,8 @@ import { Trip, UserProfile } from '../types';
 
 interface HomeProps {
   user: UserProfile;
+  trips?: Trip[];
+  usersList?: UserProfile[];
   pendingTrip?: Trip;
   editingTrip?: Trip | null;
   onCloseEditing?: () => void;
@@ -20,6 +22,7 @@ interface HomeProps {
 export default function Home({ 
   user, 
   trips = [],
+  usersList = [],
   pendingTrip, 
   editingTrip,
   onCloseEditing,
@@ -33,6 +36,25 @@ export default function Home({
 }: HomeProps) {
   const [showShipmentModal, setShowShipmentModal] = useState(false);
   const [showDrawer, setShowDrawer] = useState(false);
+
+  const renderAvatar = (photoURL?: string, name?: string, sizeClass = "w-7 h-7 text-[10px]") => {
+    if (photoURL && typeof photoURL === 'string' && photoURL.startsWith('http') && photoURL.length > 10) {
+      return (
+        <img
+          src={photoURL}
+          alt={name || 'Usuario'}
+          className={`${sizeClass} rounded-full object-cover border border-white shadow-xs flex-shrink-0`}
+        />
+      );
+    }
+    const initials = (name || 'Usuario').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    return (
+      <div className={`${sizeClass} rounded-full bg-gradient-to-br from-emerald-600 via-teal-600 to-blue-600 text-white font-extrabold flex items-center justify-center border border-white shadow-xs flex-shrink-0 uppercase`}>
+        {initials}
+      </div>
+    );
+  };
+
   const [selectedTruck, setSelectedTruck] = useState<{
     driverName: string;
     vehicle: string;
@@ -639,17 +661,21 @@ export default function Home({
                   </div>
                 </div>
 
-                {clientActiveTrip.conductorName && (
-                  <div className="mb-3 p-2 bg-slate-50 border border-slate-100 rounded-xl flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-[10px] flex items-center justify-center uppercase">
-                      {(clientActiveTrip.conductorName).split(' ').map(n => n[0]).join('').substring(0, 2)}
+                 {clientActiveTrip.conductorName && (() => {
+                  const conductorUser = usersList.find(u => u.email === clientActiveTrip.conductorId);
+                  const displayPhoto = conductorUser?.photoURL || clientActiveTrip.conductorPhotoURL;
+                  const displayName = conductorUser?.name || clientActiveTrip.conductorName;
+
+                  return (
+                    <div className="mb-3 p-2 bg-slate-50 border border-slate-100 rounded-xl flex items-center gap-2">
+                      {renderAvatar(displayPhoto, displayName, "w-8 h-8 text-[10px]")}
+                      <div className="flex flex-col text-xs min-w-0 flex-1">
+                        <span className="font-bold text-slate-700 truncate">{displayName}</span>
+                        <span className="text-[10px] text-slate-500 font-medium">{clientActiveTrip.conductorVehicleType || clientActiveTrip.vehicleType} • {clientActiveTrip.conductorPlate || 'Placa asignada'}</span>
+                      </div>
                     </div>
-                    <div className="flex flex-col text-xs min-w-0 flex-1">
-                      <span className="font-bold text-slate-700 truncate">{clientActiveTrip.conductorName}</span>
-                      <span className="text-[10px] text-slate-500 font-medium">{clientActiveTrip.conductorVehicleType || clientActiveTrip.vehicleType} • {clientActiveTrip.conductorPlate || 'Placa asignada'}</span>
-                    </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 <div className="grid grid-cols-2 gap-2">
                   <button
