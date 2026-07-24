@@ -18,8 +18,17 @@ interface ActivityProps {
 export default function Activity({ user, trips, usersList = [], onNavigateToChat, onCancelTrip, onEditTrip, onResolveCounterOffer, onCompleteTrip, onOpenRating }: ActivityProps) {
   const [filter, setFilter] = useState<'activos' | 'historial'>('activos');
 
-  // Filter trips based on selection
+  // Filter trips based on selection and user role permissions
   const filteredTrips = trips.filter((trip) => {
+    // 1. Role-based visibility check
+    if (user.role === 'conductor') {
+      const isAssignedToMe = trip.conductorId === user.email;
+      const isPending = trip.status === 'PENDIENTE';
+      if (!isPending && !isAssignedToMe) return false;
+    }
+    // Admin sees everything, Client only gets their own trips from Firestore anyway.
+
+    // 2. Tab filter check
     if (filter === 'activos') {
       return trip.status === 'EN CAMINO' || trip.status === 'PENDIENTE';
     } else {
@@ -171,7 +180,7 @@ export default function Activity({ user, trips, usersList = [], onNavigateToChat
                   )}
 
                   {/* Participant Info Section (Client or Driver Details) */}
-                  {trip.status !== 'PENDIENTE' && (() => {
+                  {(() => {
                     const conductorUser = usersList.find(u => u.email === trip.conductorId);
                     const conductorPhoto = conductorUser?.photoURL || trip.conductorPhotoURL;
                     const conductorName = conductorUser?.name || trip.conductorName || 'Conductor CargoFlow';
@@ -179,6 +188,49 @@ export default function Activity({ user, trips, usersList = [], onNavigateToChat
                     const clienteUser = usersList.find(u => u.email === trip.clienteId);
                     const clientePhoto = clienteUser?.photoURL || trip.clientePhotoURL;
                     const clienteName = clienteUser?.name || trip.clienteName || 'Cliente CargoFlow';
+
+                    // 1. Admin special double-column overview
+                    if (user.role === 'admin') {
+                      return (
+                        <div className="mt-2 p-3 bg-slate-50 border border-slate-100 rounded-xl flex flex-col gap-2">
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Detalles de Participantes (Panel Admin)</p>
+                          <div className="grid grid-cols-2 gap-4 divide-x divide-slate-200">
+                            {/* Cliente column */}
+                            <div className="flex items-center gap-2 min-w-0">
+                              {renderAvatar(clientePhoto || undefined, clienteName, "w-8 h-8 text-xs")}
+                              <div className="min-w-0">
+                                <p className="text-[8px] font-black text-blue-600 uppercase tracking-widest">Cliente</p>
+                                <p className="text-[11px] font-bold text-slate-700 truncate">{clienteName}</p>
+                              </div>
+                            </div>
+
+                            {/* Conductor column */}
+                            <div className="flex items-center gap-2 pl-3 min-w-0">
+                              {trip.status === 'PENDIENTE' ? (
+                                <div className="min-w-0">
+                                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Conductor</p>
+                                  <p className="text-[11px] text-slate-400 italic font-medium truncate">Buscando conductor...</p>
+                                </div>
+                              ) : (
+                                <>
+                                  {renderAvatar(conductorPhoto || undefined, conductorName, "w-8 h-8 text-xs")}
+                                  <div className="min-w-0">
+                                    <p className="text-[8px] font-black text-emerald-600 uppercase tracking-widest">Conductor</p>
+                                    <p className="text-[11px] font-bold text-slate-700 truncate">{conductorName}</p>
+                                    {trip.conductorPlate && (
+                                      <p className="text-[9px] text-slate-500 font-extrabold truncate">Placa: {trip.conductorPlate}</p>
+                                    )}
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    // 2. Normal roles (only if not pending)
+                    if (trip.status === 'PENDIENTE') return null;
 
                     return (
                       <div className="mt-2 p-3 bg-slate-50 border border-slate-100 rounded-xl flex items-center gap-3">
