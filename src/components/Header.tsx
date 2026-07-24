@@ -306,7 +306,7 @@ export default function Header({
       <AnimatePresence>
         {isNotificationsOpen && (
           <div 
-            className="fixed inset-0 z-[100] backdrop-blur-sm bg-black/40 flex items-center justify-center p-4"
+            className="fixed inset-0 z-[250] backdrop-blur-sm bg-black/40 flex items-center justify-center p-4"
             onClick={() => setIsNotificationsOpen(false)}
           >
             <motion.div
