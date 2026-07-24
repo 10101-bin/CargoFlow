@@ -181,6 +181,19 @@ export default function Home({
     onNavigateToView('activity');
   };
 
+  // ── Real conductor stats ──────────────────────────────────────────
+  const todayStr = new Date().toDateString();
+  const driverCompletedTrips = trips.filter(t => t.conductorId === user.email && t.status === 'COMPLETADO');
+  const todayEarnings = driverCompletedTrips
+    .filter(t => t.completedAt && new Date(t.completedAt).toDateString() === todayStr)
+    .reduce((s, t) => s + (t.price || 0) + ((t.clienteRating?.tip) || 0), 0);
+  const totalDriverCompleted = driverCompletedTrips.length;
+  const driverRating = user.rating > 0 ? user.rating.toFixed(1) : totalDriverCompleted > 0 ? '5.0' : '—';
+  const activePlate = (user.vehicles && user.vehicles.length > 0)
+    ? user.vehicles[0].plate
+    : (user.plateNumber || '—');
+  const isAvailable = user.isAvailable ?? true;
+
   return (
     <div className="relative w-full h-screen bg-background">
       {/* Drawer Sidebar Menu */}
@@ -414,31 +427,36 @@ export default function Home({
       <div className="absolute top-20 left-4 right-4 z-20">
         {user.role === 'conductor' ? (
           /* DRIVER TOP CARD */
-          <div className="w-full bg-gradient-to-r from-slate-900 via-slate-800 to-[#0A1220] text-white rounded-2xl p-4 shadow-[0px_10px_35px_rgba(0,0,0,0.3)] border border-slate-700/60 flex flex-col gap-3">
-            <div className="flex items-center justify-between">
+          <div className="relative w-full bg-gradient-to-r from-slate-900 via-slate-800 to-[#0A1220] text-white rounded-2xl p-4 shadow-[0px_10px_35px_rgba(0,0,0,0.3)] border border-slate-700/60 flex flex-col gap-3 overflow-hidden">
+            {/* Scanlines overlay — Login style */}
+            <div className="absolute inset-0 pointer-events-none rounded-2xl opacity-10 bg-[linear-gradient(to_bottom,transparent_50%,rgba(0,0,0,0.8)_50%)] bg-[length:100%_4px]" />
+
+            <div className="relative flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-xs font-black tracking-widest text-emerald-400 uppercase">
-                  MODO CONDUCTOR • DISPONIBLE
+                <span className={`w-2.5 h-2.5 rounded-full ${isAvailable ? 'bg-emerald-400 animate-pulse' : 'bg-slate-400'}`} />
+                <span className={`text-xs font-black tracking-widest uppercase ${isAvailable ? 'text-emerald-400' : 'text-slate-400'}`}>
+                  {isAvailable ? 'MODO CONDUCTOR • DISPONIBLE' : 'MODO CONDUCTOR • INACTIVO'}
                 </span>
               </div>
               <span className="text-[11px] font-extrabold bg-emerald-950 text-emerald-400 border border-emerald-500/40 px-2 py-0.5 rounded-full">
-                Placa: {user.plateNumber || 'WYZ-789'}
+                Placa: {activePlate}
               </span>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 bg-white/5 p-2 rounded-xl border border-white/10 text-center">
+            <div className="relative grid grid-cols-3 gap-2 bg-white/5 p-2 rounded-xl border border-white/10 text-center">
               <div>
                 <span className="text-[10px] text-slate-400 font-bold block uppercase">Ganancias Hoy</span>
-                <span className="text-xs font-black text-emerald-400">$1.250.000</span>
+                <span className="text-xs font-black text-emerald-400">
+                  {todayEarnings > 0 ? '$' + todayEarnings.toLocaleString('es-CO') : '$0'}
+                </span>
               </div>
               <div className="border-x border-white/10">
                 <span className="text-[10px] text-slate-400 font-bold block uppercase">Calificación</span>
-                <span className="text-xs font-black text-amber-400">★ 4.9</span>
+                <span className="text-xs font-black text-amber-400">★ {driverRating}</span>
               </div>
               <div>
                 <span className="text-[10px] text-slate-400 font-bold block uppercase">Entregas</span>
-                <span className="text-xs font-black text-blue-400">12 Viajes</span>
+                <span className="text-xs font-black text-blue-400">{totalDriverCompleted} Viajes</span>
               </div>
             </div>
           </div>
