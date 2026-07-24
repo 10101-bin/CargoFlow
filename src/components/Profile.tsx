@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
-import { Edit2, Star, Plus, CreditCard, HelpCircle, Settings, LogOut, Check, X, Truck } from 'lucide-react';
+import { 
+  Edit2, Star, Plus, CreditCard, HelpCircle, Settings, LogOut, 
+  Check, X, Truck, FileText, Camera, Calendar, AlertCircle, 
+  Trash2, CheckCircle2, Eye, Image, UserCheck 
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { UserProfile } from '../types';
+import { UserProfile, Vehicle } from '../types';
 
 interface ProfileProps {
   user: UserProfile;
@@ -11,6 +15,88 @@ interface ProfileProps {
   onNavigateToSettings: () => void;
 }
 
+// Client-side image compression helper (zero cost, saves directly to Firestore as Base64)
+const compressImage = (file: File): Promise<string> => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(event.target?.result as string);
+          return;
+        }
+        // Limit coordinates to 800px for optimal Firestore size footprint
+        const maxCoord = 800;
+        let w = img.width;
+        let h = img.height;
+        if (w > maxCoord || h > maxCoord) {
+          if (w > h) {
+            h = Math.round((h * maxCoord) / w);
+            w = maxCoord;
+          } else {
+            w = Math.round((w * maxCoord) / h);
+            h = maxCoord;
+          }
+        }
+        canvas.width = w;
+        canvas.height = h;
+        ctx.drawImage(img, 0, 0, w, h);
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.60);
+        resolve(compressedBase64);
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
+// Document validity helper
+const getDocValidity = (expiryDate?: string, photo?: string) => {
+  if (!expiryDate || !photo) {
+    return {
+      label: 'Pendiente',
+      bgColor: 'bg-red-50 text-red-700 border-red-100',
+      dotColor: 'bg-red-500',
+      isValid: false
+    };
+  }
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const exp = new Date(expiryDate);
+  exp.setHours(0,0,0,0);
+
+  if (exp < today) {
+    return {
+      label: 'Vencido',
+      bgColor: 'bg-red-50 text-red-700 border-red-100',
+      dotColor: 'bg-red-500',
+      isValid: false
+    };
+  }
+
+  // Check if expiring in next 30 days
+  const diffTime = exp.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  if (diffDays <= 30) {
+    return {
+      label: `Vence en ${diffDays} d.`,
+      bgColor: 'bg-amber-50 text-amber-700 border-amber-100',
+      dotColor: 'bg-amber-500',
+      isValid: true
+    };
+  }
+
+  return {
+    label: 'Vigente',
+    bgColor: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+    dotColor: 'bg-emerald-500',
+    isValid: true
+  };
+};
+
 export default function Profile({ user, onUpdateProfile, onDeposit, onLogout, onNavigateToSettings }: ProfileProps) {
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [depositAmount, setDepositAmount] = useState('200000');
@@ -18,7 +104,28 @@ export default function Profile({ user, onUpdateProfile, onDeposit, onLogout, on
   const [showEditModal, setShowEditModal] = useState(false);
   const [editName, setEditName] = useState(user.name);
   const [editPhone, setEditPhone] = useState(user.phone || '');
-  const [editPlate, setEditPlate] = useState(user.plateNumber || '');
+
+  // Document photo viewer modal state
+  const [viewDocPhoto, setViewDocPhoto] = useState<string | null>(null);
+  const [viewDocTitle, setViewDocTitle] = useState<string>('');
+
+  // Driver License Update Modal State
+  const [showLicenseModal, setShowLicenseModal] = useState(false);
+  const [licenseExpiry, setLicenseExpiry] = useState(user.licenseExpiry || '');
+  const [licensePhoto, setLicensePhoto] = useState<string | null>(user.licensePhoto || null);
+  const [uploadingLicense, setUploadingLicense] = useState(false);
+
+  // Add Vehicle Modal State
+  const [showAddVehicleModal, setShowAddVehicleModal] = useState(false);
+  const [newPlate, setNewPlate] = useState('');
+  const [newType, setNewType] = useState('Furgón');
+  const [newModel, setNewModel] = useState('');
+  const [newSoatExpiry, setNewSoatExpiry] = useState('');
+  const [newSoatPhoto, setNewSoatPhoto] = useState<string | null>(null);
+  const [newTecnoExpiry, setNewTecnoExpiry] = useState('');
+  const [newTecnoPhoto, setNewTecnoPhoto] = useState<string | null>(null);
+  const [uploadingSoat, setUploadingSoat] = useState(false);
+  const [uploadingTecno, setUploadingTecno] = useState(false);
 
   const handleDepositSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,10 +142,104 @@ export default function Profile({ user, onUpdateProfile, onDeposit, onLogout, on
       onUpdateProfile({
         name: editName,
         phone: editPhone,
-        plateNumber: editPlate,
       });
       setShowEditModal(false);
     }
+  };
+
+  // Upload/Compress License File
+  const handleLicensePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setUploadingLicense(true);
+      try {
+        const base64 = await compressImage(file);
+        setLicensePhoto(base64);
+      } catch (err) {
+        console.error('License upload compression error:', err);
+      } finally {
+        setUploadingLicense(false);
+      }
+    }
+  };
+
+  const handleLicenseSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onUpdateProfile({
+      licenseExpiry,
+      licensePhoto: licensePhoto || undefined
+    });
+    setShowLicenseModal(false);
+  };
+
+  // Upload/Compress SOAT File
+  const handleSoatPhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setUploadingSoat(true);
+      try {
+        const base64 = await compressImage(file);
+        setNewSoatPhoto(base64);
+      } catch (err) {
+        console.error('SOAT upload compression error:', err);
+      } finally {
+        setUploadingSoat(false);
+      }
+    }
+  };
+
+  // Upload/Compress Tecno File
+  const handleTecnoPhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setUploadingTecno(true);
+      try {
+        const base64 = await compressImage(file);
+        setNewTecnoPhoto(base64);
+      } catch (err) {
+        console.error('Tecno upload compression error:', err);
+      } finally {
+        setUploadingTecno(false);
+      }
+    }
+  };
+
+  // Create new Vehicle item
+  const handleAddVehicleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPlate.trim()) return;
+
+    const formattedPlate = newPlate.toUpperCase().trim();
+    const newVehicleItem: Vehicle = {
+      id: `vh-${Date.now()}`,
+      plate: formattedPlate,
+      type: newType,
+      model: newModel || undefined,
+      soatExpiry: newSoatExpiry || undefined,
+      soatPhoto: newSoatPhoto || undefined,
+      tecnomecanicaExpiry: newTecnoExpiry || undefined,
+      tecnomecanicaPhoto: newTecnoPhoto || undefined
+    };
+
+    const currentVehicles = user.vehicles || [];
+    const isFirst = currentVehicles.length === 0;
+
+    onUpdateProfile({
+      vehicles: [...currentVehicles, newVehicleItem],
+      // If it's the first vehicle, set it as default in profile values
+      plateNumber: isFirst ? formattedPlate : user.plateNumber,
+      vehicleType: isFirst ? newType : user.vehicleType
+    });
+
+    // Reset Form state
+    setNewPlate('');
+    setNewType('Furgón');
+    setNewModel('');
+    setNewSoatExpiry('');
+    setNewSoatPhoto(null);
+    setNewTecnoExpiry('');
+    setNewTecnoPhoto(null);
+    setShowAddVehicleModal(false);
   };
 
   return (
@@ -71,7 +272,7 @@ export default function Profile({ user, onUpdateProfile, onDeposit, onLogout, on
           
           <div className="flex items-center gap-2 mt-1.5 px-3 py-1 bg-surface-container-high rounded-full border border-surface-container-highest">
             <span className="text-xs font-bold text-on-surface-variant capitalize">
-              {user.role === 'conductor' ? 'Conductor Verificado' : 'Cliente VIP'}
+              {user.role === 'admin' ? 'Administrador' : user.role === 'conductor' ? 'Conductor Verificado' : 'Cliente VIP'}
             </span>
             <span className="w-1 h-1 rounded-full bg-outline-variant"></span>
             <Star size={12} className="text-amber-500" fill="currentColor" />
@@ -112,26 +313,212 @@ export default function Profile({ user, onUpdateProfile, onDeposit, onLogout, on
           </div>
         </section>
 
-        {/* Driver Details (If conductor role) */}
-        {user.role === 'conductor' && user.plateNumber && (
+        {/* Driver Documentación: Licencia de Conducir (If conductor) */}
+        {user.role === 'conductor' && (
           <section className="bg-white rounded-2xl p-5 border border-surface-container shadow-[0px_4px_20px_rgba(0,0,0,0.02)]">
-            <h3 className="text-xs font-bold text-outline uppercase tracking-wider mb-3">Detalle de Vehículo</h3>
-            <div className="flex justify-between items-center bg-surface p-3.5 rounded-xl border border-surface-container-high">
-              <div className="flex items-center gap-3">
-                <div className="bg-blue-100 text-primary-container p-2 rounded-lg">
-                  <Truck size={20} fill="currentColor" />
+            <h3 className="text-xs font-bold text-outline uppercase tracking-wider mb-3">Licencia de Conducir</h3>
+            
+            {/* Validity card */}
+            <div className="flex flex-col gap-3 p-4 bg-surface rounded-xl border border-surface-container-high">
+              <div className="flex justify-between items-start">
+                <div className="flex items-center gap-3">
+                  <div className="bg-[#0b224d]/10 text-[#0b224d] p-2 rounded-lg">
+                    <FileText size={20} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-extrabold text-on-surface">Pase / Licencia</p>
+                    <p className="text-[11px] text-outline">
+                      {user.licenseExpiry ? `Vence: ${user.licenseExpiry}` : 'Sin registrar fecha'}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-extrabold text-on-surface">
-                    {user.vehicleType ? user.vehicleType : 'Vehículo No Especificado'}
-                  </p>
-                  <p className="text-[11px] text-outline font-medium">SOAT, Licencia y Cédula Verificados</p>
-                </div>
+                
+                {/* State Tag */}
+                {(() => {
+                  const val = getDocValidity(user.licenseExpiry, user.licensePhoto);
+                  return (
+                    <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border flex items-center gap-1.5 ${val.bgColor}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${val.dotColor}`}></span>
+                      {val.label}
+                    </span>
+                  );
+                })()}
               </div>
-              <span className="text-sm font-black px-3 py-1 bg-white border border-outline-variant rounded-md tracking-wider uppercase">
-                {user.plateNumber}
-              </span>
+
+              {/* View/Upload Actions */}
+              <div className="flex gap-2 mt-2 pt-2 border-t border-slate-100">
+                {user.licensePhoto && (
+                  <button
+                    onClick={() => {
+                      setViewDocPhoto(user.licensePhoto!);
+                      setViewDocTitle('Licencia de Conducir');
+                    }}
+                    className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer border border-slate-200/50"
+                  >
+                    <Eye size={14} />
+                    Ver Foto
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowLicenseModal(true)}
+                  className="flex-1 py-2 bg-primary-container text-white hover:opacity-90 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Camera size={14} />
+                  {user.licensePhoto ? 'Actualizar' : 'Subir Pase'}
+                </button>
+              </div>
             </div>
+          </section>
+        )}
+
+        {/* Mis Vehículos List Section (If conductor) */}
+        {user.role === 'conductor' && (
+          <section className="bg-white rounded-2xl p-5 border border-surface-container shadow-[0px_4px_20px_rgba(0,0,0,0.02)] flex flex-col gap-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-xs font-bold text-outline uppercase tracking-wider">Mis Vehículos (Flota)</h3>
+              <button
+                onClick={() => setShowAddVehicleModal(true)}
+                className="text-xs font-black text-[#1E5EFF] hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <Plus size={14} strokeWidth={3} />
+                Agregar Vehículo
+              </button>
+            </div>
+
+            {/* List elements */}
+            {(!user.vehicles || user.vehicles.length === 0) ? (
+              <div className="text-center py-8 border border-dashed border-slate-200 rounded-xl bg-slate-50/50 flex flex-col items-center justify-center">
+                <Truck className="text-slate-300 mb-2" size={32} />
+                <p className="text-xs font-bold text-slate-400">Ningún vehículo registrado</p>
+                <p className="text-[10px] text-slate-400 mt-1 max-w-[200px] leading-relaxed">
+                  Registra tu primer camión o furgoneta para poder aceptar fletes.
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {user.vehicles.map((vh) => {
+                  const soatVal = getDocValidity(vh.soatExpiry, vh.soatPhoto);
+                  const tecnoVal = getDocValidity(vh.tecnomecanicaExpiry, vh.tecnomecanicaPhoto);
+                  const isDefault = user.plateNumber === vh.plate;
+
+                  return (
+                    <div 
+                      key={vh.id} 
+                      className={`p-4 bg-slate-50/40 rounded-xl border flex flex-col gap-3 relative transition-all ${
+                        isDefault 
+                          ? 'border-[#0b224d] shadow-[0px_4px_12px_rgba(11,34,77,0.06)] bg-white' 
+                          : 'border-slate-100'
+                      }`}
+                    >
+                      
+                      {/* Top Row: Details & Actions */}
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-2.5">
+                          <div className={`p-2 rounded-lg ${isDefault ? 'bg-[#0b224d] text-white' : 'bg-slate-100 text-slate-600'}`}>
+                            <Truck size={18} />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-extrabold text-on-surface">{vh.type}</span>
+                              {vh.model && <span className="text-[10px] text-slate-400 font-bold">Mod. {vh.model}</span>}
+                            </div>
+                            <span className="text-xs font-black text-[#0b224d] tracking-wider uppercase">{vh.plate}</span>
+                          </div>
+                        </div>
+
+                        {/* Principal Selector & Delete Actions */}
+                        <div className="flex items-center gap-2">
+                          {isDefault ? (
+                            <span className="text-[9px] font-black bg-[#0b224d]/10 text-[#0b224d] px-2 py-0.5 rounded-full border border-[#0b224d]/20 flex items-center gap-1">
+                              <UserCheck size={10} strokeWidth={3} />
+                              Principal
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                onUpdateProfile({
+                                  plateNumber: vh.plate,
+                                  vehicleType: vh.type
+                                });
+                              }}
+                              className="text-[9px] font-black bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full border border-slate-200 transition-colors cursor-pointer"
+                            >
+                              Fijar Principal
+                            </button>
+                          )}
+
+                          {/* Delete Vehicle */}
+                          <button
+                            onClick={() => {
+                              if (confirm(`¿Estás seguro de eliminar el vehículo ${vh.plate}?`)) {
+                                const remaining = user.vehicles?.filter(v => v.id !== vh.id) || [];
+                                const wasDefault = user.plateNumber === vh.plate;
+                                onUpdateProfile({
+                                  vehicles: remaining,
+                                  plateNumber: wasDefault ? (remaining[0]?.plate || '') : user.plateNumber,
+                                  vehicleType: wasDefault ? (remaining[0]?.type || '') : user.vehicleType
+                                });
+                              }
+                            }}
+                            className="p-1 hover:bg-red-50 hover:text-red-600 rounded-lg text-slate-400 transition-colors cursor-pointer"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Documents Grid */}
+                      <div className="grid grid-cols-2 gap-2 bg-white p-2.5 rounded-lg border border-slate-100/80">
+                        <div className="flex flex-col gap-1">
+                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">SOAT</p>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-extrabold text-on-surface">
+                              {vh.soatExpiry ? vh.soatExpiry : 'Sin fecha'}
+                            </span>
+                            <span className={`w-2 h-2 rounded-full ${soatVal.dotColor}`} title={soatVal.label}></span>
+                          </div>
+                          {vh.soatPhoto && (
+                            <button
+                              onClick={() => {
+                                setViewDocPhoto(vh.soatPhoto!);
+                                setViewDocTitle(`SOAT - ${vh.plate}`);
+                              }}
+                              className="text-[9px] font-black text-primary hover:underline mt-0.5 text-left flex items-center gap-0.5 cursor-pointer"
+                            >
+                              <Eye size={10} />
+                              Ver Foto
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="flex flex-col gap-1 border-l border-slate-100 pl-2.5">
+                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Tecnicomecánica</p>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-extrabold text-on-surface">
+                              {vh.tecnomecanicaExpiry ? vh.tecnomecanicaExpiry : 'Sin fecha'}
+                            </span>
+                            <span className={`w-2 h-2 rounded-full ${tecnoVal.dotColor}`} title={tecnoVal.label}></span>
+                          </div>
+                          {vh.tecnomecanicaPhoto && (
+                            <button
+                              onClick={() => {
+                                setViewDocPhoto(vh.tecnomecanicaPhoto!);
+                                setViewDocTitle(`Tecnomecánica - ${vh.plate}`);
+                              }}
+                              className="text-[9px] font-black text-primary hover:underline mt-0.5 text-left flex items-center gap-0.5 cursor-pointer"
+                            >
+                              <Eye size={10} />
+                              Ver Foto
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </section>
         )}
 
@@ -167,7 +554,7 @@ export default function Profile({ user, onUpdateProfile, onDeposit, onLogout, on
 
           {/* Settings */}
           <button 
-            onClick={() => alert('Ajustes del perfil: Notificaciones de viaje, Idioma Español, Modo Claro.')}
+            onClick={onNavigateToSettings}
             className="flex items-center justify-between w-full p-4 bg-white rounded-2xl shadow-[0px_4px_20px_rgba(0,0,0,0.02)] border border-surface-container hover:bg-surface-container-low transition-colors group cursor-pointer"
           >
             <div className="flex items-center gap-4">
@@ -196,6 +583,264 @@ export default function Profile({ user, onUpdateProfile, onDeposit, onLogout, on
         </section>
 
       </main>
+
+      {/* ── PHOTO VIEWER POPUP MODAL ───────────────────────── */}
+      <AnimatePresence>
+        {viewDocPhoto && (
+          <div className="fixed inset-0 bg-black/85 z-[300] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-3xl overflow-hidden max-w-sm w-full border border-slate-200 flex flex-col shadow-2xl"
+            >
+              <div className="flex justify-between items-center px-5 py-4 border-b border-slate-100 bg-slate-50">
+                <h3 className="text-sm font-black text-on-surface flex items-center gap-1.5">
+                  <FileText size={16} />
+                  {viewDocTitle}
+                </h3>
+                <button 
+                  onClick={() => setViewDocPhoto(null)} 
+                  className="p-1 hover:bg-slate-200 rounded-full text-slate-500 transition-colors cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="p-4 bg-slate-900 flex items-center justify-center min-h-[250px]">
+                <img 
+                  src={viewDocPhoto} 
+                  alt={viewDocTitle} 
+                  className="max-h-[350px] w-auto object-contain rounded-lg shadow-md"
+                />
+              </div>
+              <div className="p-4 text-center">
+                <button
+                  onClick={() => setViewDocPhoto(null)}
+                  className="w-full py-2.5 bg-slate-900 text-white font-bold rounded-xl text-xs hover:bg-slate-800 transition-all cursor-pointer"
+                >
+                  Cerrar Vista
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── DRIVER LICENSE UPDATE MODAL ─────────────────────── */}
+      <AnimatePresence>
+        {showLicenseModal && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-2xl p-6 shadow-2xl max-w-sm w-full border border-surface-container"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-base font-black text-on-surface">Subir Licencia de Conducir</h3>
+                <button onClick={() => setShowLicenseModal(false)} className="p-1 hover:bg-surface-container rounded-full text-on-surface-variant">
+                  <X size={18} />
+                </button>
+              </div>
+
+              <form onSubmit={handleLicenseSubmit} className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-bold text-outline uppercase tracking-wider">Fecha de Vencimiento</label>
+                  <input
+                    type="date"
+                    value={licenseExpiry}
+                    onChange={(e) => setLicenseExpiry(e.target.value)}
+                    className="w-full h-11 px-3 bg-surface rounded-xl border border-outline-variant text-sm font-semibold focus:outline-none focus:border-primary-container"
+                    required
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-outline uppercase tracking-wider">Foto del Documento</label>
+                  
+                  {licensePhoto ? (
+                    <div className="relative border border-slate-200 rounded-xl overflow-hidden bg-slate-50 p-2 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1.5 bg-emerald-50 text-emerald-600 rounded-md">
+                          <CheckCircle2 size={16} />
+                        </div>
+                        <span className="text-[10px] font-bold text-slate-500">Foto cargada correctamente</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setLicensePhoto(null)}
+                        className="text-[10px] font-black text-red-500 hover:underline cursor-pointer"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="border-2 border-dashed border-slate-200 hover:border-primary/50 transition-colors rounded-xl p-4 flex flex-col items-center justify-center gap-1.5 cursor-pointer bg-slate-50/50">
+                      <Camera className="text-slate-400" size={24} />
+                      <span className="text-xs font-bold text-slate-500">
+                        {uploadingLicense ? 'Procesando imagen...' : 'Tomar Foto / Seleccionar'}
+                      </span>
+                      <span className="text-[9px] text-slate-400">Compresión automática inteligente</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLicensePhotoChange}
+                        className="hidden"
+                        disabled={uploadingLicense}
+                        required={!user.licensePhoto}
+                      />
+                    </label>
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={uploadingLicense}
+                  className="w-full h-11 bg-[#1E5EFF] text-white font-bold rounded-xl mt-2 flex items-center justify-center shadow-md hover:bg-primary transition-all cursor-pointer disabled:opacity-50"
+                >
+                  Guardar Licencia
+                </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── ADD VEHICLE MODAL ──────────────────────────────── */}
+      <AnimatePresence>
+        {showAddVehicleModal && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-2xl p-6 shadow-2xl max-w-sm w-full border border-surface-container flex flex-col max-h-[90vh] overflow-y-auto"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-base font-black text-on-surface">Agregar Nuevo Vehículo</h3>
+                <button onClick={() => setShowAddVehicleModal(false)} className="p-1 hover:bg-surface-container rounded-full text-on-surface-variant">
+                  <X size={18} />
+                </button>
+              </div>
+
+              <form onSubmit={handleAddVehicleSubmit} className="flex flex-col gap-4">
+                {/* Plate */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-bold text-outline uppercase tracking-wider">Placa</label>
+                  <input
+                    type="text"
+                    value={newPlate}
+                    onChange={(e) => setNewPlate(e.target.value.toUpperCase())}
+                    className="w-full h-11 px-3 bg-surface rounded-xl border border-outline-variant text-sm font-bold uppercase placeholder:normal-case focus:outline-none focus:border-primary-container"
+                    placeholder="Ej: WYZ-789"
+                    required
+                  />
+                </div>
+
+                {/* Type Selection */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-bold text-outline uppercase tracking-wider">Tipo de Vehículo</label>
+                  <select
+                    value={newType}
+                    onChange={(e) => setNewType(e.target.value)}
+                    className="w-full h-11 px-3 bg-surface rounded-xl border border-outline-variant text-sm font-semibold focus:outline-none focus:border-primary-container"
+                  >
+                    <option value="Furgón">Furgón</option>
+                    <option value="Camión Sencillo">Camión Sencillo</option>
+                    <option value="Turbo">Turbo</option>
+                    <option value="Tractomula">Tractomula</option>
+                    <option value="Camioneta">Camioneta</option>
+                  </select>
+                </div>
+
+                {/* Model Year */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-bold text-outline uppercase tracking-wider">Modelo (Año)</label>
+                  <input
+                    type="number"
+                    value={newModel}
+                    onChange={(e) => setNewModel(e.target.value)}
+                    className="w-full h-11 px-3 bg-surface rounded-xl border border-outline-variant text-sm font-semibold focus:outline-none focus:border-primary-container"
+                    placeholder="Ej: 2022"
+                    min="1980"
+                    max="2027"
+                  />
+                </div>
+
+                {/* SOAT details */}
+                <div className="border-t border-slate-100 pt-3 flex flex-col gap-3">
+                  <h4 className="text-xs font-bold text-[#0b224d]">Seguro SOAT Obligatorio</h4>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold text-outline uppercase">Vencimiento SOAT</label>
+                    <input
+                      type="date"
+                      value={newSoatExpiry}
+                      onChange={(e) => setNewSoatExpiry(e.target.value)}
+                      className="w-full h-10 px-3 bg-surface rounded-xl border border-outline-variant text-xs font-semibold focus:outline-none"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold text-outline uppercase">Foto del SOAT</label>
+                    {newSoatPhoto ? (
+                      <div className="relative border border-slate-200 rounded-xl overflow-hidden bg-slate-50 p-2 flex items-center justify-between">
+                        <span className="text-[9px] text-slate-500 font-bold">SOAT cargado</span>
+                        <button type="button" onClick={() => setNewSoatPhoto(null)} className="text-[9px] font-black text-red-500 hover:underline">Eliminar</button>
+                      </div>
+                    ) : (
+                      <label className="border border-dashed border-slate-200 rounded-xl p-3 flex flex-col items-center justify-center cursor-pointer bg-slate-50/50">
+                        <Camera className="text-slate-400" size={18} />
+                        <span className="text-[10px] text-slate-500 font-bold mt-1">
+                          {uploadingSoat ? 'Procesando...' : 'Tomar Foto SOAT'}
+                        </span>
+                        <input type="file" accept="image/*" onChange={handleSoatPhotoChange} className="hidden" disabled={uploadingSoat} />
+                      </label>
+                    )}
+                  </div>
+                </div>
+
+                {/* Tecnicomecanica details */}
+                <div className="border-t border-slate-100 pt-3 flex flex-col gap-3">
+                  <h4 className="text-xs font-bold text-[#0b224d]">Revisión Tecnicomecánica</h4>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold text-outline uppercase">Vencimiento Tecnicomecánica</label>
+                    <input
+                      type="date"
+                      value={newTecnoExpiry}
+                      onChange={(e) => setNewTecnoExpiry(e.target.value)}
+                      className="w-full h-10 px-3 bg-surface rounded-xl border border-outline-variant text-xs font-semibold focus:outline-none"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold text-outline uppercase">Foto Tecnicomecánica</label>
+                    {newTecnoPhoto ? (
+                      <div className="relative border border-slate-200 rounded-xl overflow-hidden bg-slate-50 p-2 flex items-center justify-between">
+                        <span className="text-[9px] text-slate-500 font-bold">Tecno cargado</span>
+                        <button type="button" onClick={() => setNewTecnoPhoto(null)} className="text-[9px] font-black text-red-500 hover:underline">Eliminar</button>
+                      </div>
+                    ) : (
+                      <label className="border border-dashed border-slate-200 rounded-xl p-3 flex flex-col items-center justify-center cursor-pointer bg-slate-50/50">
+                        <Camera className="text-slate-400" size={18} />
+                        <span className="text-[10px] text-slate-500 font-bold mt-1">
+                          {uploadingTecno ? 'Procesando...' : 'Tomar Foto Tecno'}
+                        </span>
+                        <input type="file" accept="image/*" onChange={handleTecnoPhotoChange} className="hidden" disabled={uploadingTecno} />
+                      </label>
+                    )}
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={uploadingSoat || uploadingTecno}
+                  className="w-full h-11 bg-[#1E5EFF] text-white font-bold rounded-xl mt-3 flex items-center justify-center shadow-md hover:bg-primary transition-all cursor-pointer disabled:opacity-50"
+                >
+                  Agregar Vehículo
+                </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* DEPOSIT WALLET MODAL */}
       <AnimatePresence>
@@ -290,28 +935,6 @@ export default function Profile({ user, onUpdateProfile, onDeposit, onLogout, on
                     placeholder="+57 300 000 0000"
                   />
                 </div>
-
-                {user.role === 'conductor' && (
-                  <>
-                    <div className="flex flex-col gap-1">
-                      <label className="text-xs font-bold text-outline uppercase tracking-wider">Placa de Vehículo</label>
-                      <input
-                        type="text"
-                        value={editPlate}
-                        onChange={(e) => setEditPlate(e.target.value.toUpperCase())}
-                        className="w-full h-11 px-3 bg-surface rounded-xl border border-outline-variant text-sm font-bold uppercase focus:outline-none focus:border-primary-container"
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => alert('Módulo de actualización de SOAT, Tecnomecánica y Licencia en construcción.')}
-                      className="mt-1 flex items-center justify-center gap-2 w-full py-3 border border-dashed border-outline-variant rounded-xl text-sm font-bold text-on-surface-variant hover:bg-surface-container-low transition-colors"
-                    >
-                      <Truck size={16} />
-                      Actualizar Documentos
-                    </button>
-                  </>
-                )}
 
                 <button
                   type="submit"

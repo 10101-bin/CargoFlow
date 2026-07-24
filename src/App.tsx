@@ -602,7 +602,10 @@ export default function App() {
     }
   };
 
-  const handleAcceptTrip = async (tripId: string) => {
+  const handleAcceptTrip = async (tripId: string, assignedPlate?: string, assignedType?: string) => {
+    const plate = assignedPlate || user.plateNumber || '';
+    const vtype = assignedType || user.vehicleType || '';
+
     // Optimistic local update
     setTrips(prev => prev.map(t => 
       t.id === tripId 
@@ -611,8 +614,8 @@ export default function App() {
             status: 'EN CAMINO', 
             conductorId: user.email, 
             conductorName: user.name,
-            conductorPlate: user.plateNumber,
-            conductorVehicleType: user.vehicleType,
+            conductorPlate: plate,
+            conductorVehicleType: vtype,
             conductorPhotoURL: user.photoURL || undefined
           } 
         : t
@@ -626,8 +629,8 @@ export default function App() {
         status: 'EN CAMINO',
         conductorId: user.email,
         conductorName: user.name,
-        conductorPlate: user.plateNumber || null,
-        conductorVehicleType: user.vehicleType || null,
+        conductorPlate: plate || null,
+        conductorVehicleType: vtype || null,
         conductorPhotoURL: user.photoURL || null
       });
 
@@ -637,7 +640,7 @@ export default function App() {
         sendDbNotification(
           targetTrip.clienteId,
           '🚚 ¡Tu Flete ha sido Aceptado!',
-          `${user.name} (${user.vehicleType || 'Vehículo'} - Placa: ${user.plateNumber || 'asignada'}) aceptó tu servicio de ${targetTrip.origin} a ${targetTrip.destination}.`,
+          `${user.name} (${vtype || 'Vehículo'} - Placa: ${plate || 'asignada'}) aceptó tu servicio de ${targetTrip.origin} a ${targetTrip.destination}.`,
           `trip-accepted-${tripId}`
         );
       }
@@ -646,11 +649,24 @@ export default function App() {
     }
   };
 
-  const handleCounterOffer = async (tripId: string, price: number) => {
+  const handleCounterOffer = async (tripId: string, price: number, assignedPlate?: string, assignedType?: string) => {
+    const plate = assignedPlate || user.plateNumber || '';
+    const vtype = assignedType || user.vehicleType || '';
+
     // Optimistic update
     setTrips(prev => prev.map(t => 
       t.id === tripId 
-        ? { ...t, counterOffer: { price, conductorId: user.email, conductorName: user.name } } 
+        ? { 
+            ...t, 
+            counterOffer: { 
+              price, 
+              conductorId: user.email, 
+              conductorName: user.name,
+              assignedPlate: plate,
+              assignedType: vtype,
+              conductorPhotoURL: user.photoURL || undefined
+            } 
+          } 
         : t
     ));
     
@@ -658,7 +674,14 @@ export default function App() {
       const { db } = await import('./config/firebase');
       const { doc, updateDoc } = await import('firebase/firestore');
       await updateDoc(doc(db, 'trips', tripId), {
-        counterOffer: { price, conductorId: user.email, conductorName: user.name }
+        counterOffer: { 
+          price, 
+          conductorId: user.email, 
+          conductorName: user.name,
+          assignedPlate: plate || null,
+          assignedType: vtype || null,
+          conductorPhotoURL: user.photoURL || null
+        }
       });
 
       const targetTrip = trips.find(t => t.id === tripId);
@@ -667,7 +690,7 @@ export default function App() {
         sendDbNotification(
           targetTrip.clienteId,
           '🏷️ ¡Nueva Oferta de Conductor!',
-          `${user.name} propone realizar tu viaje por $${price.toLocaleString('es-CO')} COP.`,
+          `${user.name} propone realizar tu viaje por $${price.toLocaleString('es-CO')} COP con vehículo ${vtype || 'asignado'} (Placa: ${plate || 'pendiente'}).`,
           `trip-offer-${tripId}`
         );
       }
@@ -690,9 +713,9 @@ export default function App() {
               price: trip.counterOffer!.price, 
               conductorId: trip.counterOffer!.conductorId, 
               conductorName: trip.counterOffer!.conductorName,
-              conductorPlate: user.plateNumber,
-              conductorVehicleType: user.vehicleType,
-              conductorPhotoURL: user.photoURL,
+              conductorPlate: trip.counterOffer!.assignedPlate || '',
+              conductorVehicleType: trip.counterOffer!.assignedType || '',
+              conductorPhotoURL: trip.counterOffer!.conductorPhotoURL || undefined,
               counterOffer: undefined 
             } 
           : t
@@ -706,9 +729,9 @@ export default function App() {
           price: trip.counterOffer.price,
           conductorId: trip.counterOffer.conductorId,
           conductorName: trip.counterOffer.conductorName,
-          conductorPlate: user.plateNumber || null,
-          conductorVehicleType: user.vehicleType || null,
-          conductorPhotoURL: user.photoURL || null,
+          conductorPlate: trip.counterOffer.assignedPlate || null,
+          conductorVehicleType: trip.counterOffer.assignedType || null,
+          conductorPhotoURL: trip.counterOffer.conductorPhotoURL || null,
           counterOffer: deleteField()
         });
       } catch (e) {

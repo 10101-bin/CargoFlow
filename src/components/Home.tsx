@@ -12,9 +12,9 @@ interface HomeProps {
   onCloseEditing?: () => void;
   onCreateShipment: (trip: Trip) => void;
   onEditShipment?: (trip: Trip) => void;
-  onAcceptTrip?: (tripId: string) => void;
-  onCounterOfferTrip?: (tripId: string, price: number) => void;
-  onNavigateToView: (view: 'home' | 'activity' | 'chat' | 'profile') => void;
+  onAcceptTrip?: (tripId: string, assignedPlate?: string, assignedType?: string) => void;
+  onCounterOfferTrip?: (tripId: string, price: number, assignedPlate?: string, assignedType?: string) => void;
+  onNavigateToView: (view: 'home' | 'activity' | 'chat' | 'dashboard' | 'profile') => void;
   onUpdateProfile?: (updates: Partial<UserProfile>) => void;
   onLogout: () => void;
 }
@@ -73,6 +73,10 @@ export default function Home({
   const [customPrice, setCustomPrice] = useState(1250000);
   const [isCounterOffering, setIsCounterOffering] = useState(false);
   const [counterOfferPrice, setCounterOfferPrice] = useState(pendingTrip?.price || 1250000);
+
+  // Vehicle Selector state (for transport companies / multi-vehicle assignment)
+  const [showVehicleSelector, setShowVehicleSelector] = useState(false);
+  const [actionToPerform, setActionToPerform] = useState<{ type: 'accept' | 'counter'; tripId: string; price?: number } | null>(null);
 
   // When editingTrip changes, load it into the form
   React.useEffect(() => {
@@ -549,10 +553,17 @@ export default function Home({
                     <button
                       onClick={() => {
                         if (onCounterOfferTrip && pendingTrip) {
-                          onCounterOfferTrip(pendingTrip.id, counterOfferPrice);
-                          alert('¡Tu contraoferta ha sido enviada al cliente!');
-                          setIsCounterOffering(false);
-                          onNavigateToView('activity');
+                          if (user.vehicles && user.vehicles.length > 1) {
+                            setActionToPerform({ type: 'counter', tripId: pendingTrip.id, price: counterOfferPrice });
+                            setShowVehicleSelector(true);
+                          } else {
+                            const plate = user.plateNumber || (user.vehicles?.[0]?.plate) || '';
+                            const vtype = user.vehicleType || (user.vehicles?.[0]?.type) || '';
+                            onCounterOfferTrip(pendingTrip.id, counterOfferPrice, plate, vtype);
+                            alert('¡Tu contraoferta ha sido enviada al cliente!');
+                            setIsCounterOffering(false);
+                            onNavigateToView('activity');
+                          }
                         }
                       }}
                       className="flex-1 h-[45px] rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center justify-center shadow-lg transition-all"
@@ -566,10 +577,17 @@ export default function Home({
                   <button
                     onClick={() => {
                       if (onAcceptTrip && pendingTrip) {
-                        onAcceptTrip(pendingTrip.id);
+                        if (user.vehicles && user.vehicles.length > 1) {
+                          setActionToPerform({ type: 'accept', tripId: pendingTrip.id });
+                          setShowVehicleSelector(true);
+                        } else {
+                          const plate = user.plateNumber || (user.vehicles?.[0]?.plate) || '';
+                          const vtype = user.vehicleType || (user.vehicles?.[0]?.type) || '';
+                          onAcceptTrip(pendingTrip.id, plate, vtype);
+                          alert(`¡Has tomado la oferta de carga hacia ${pendingTrip.destination}!`);
+                          onNavigateToView('activity');
+                        }
                       }
-                      alert(`¡Has tomado la oferta de carga hacia ${pendingTrip.destination}!`);
-                      onNavigateToView('activity');
                     }}
                     className="w-full h-[50px] rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] cursor-pointer"
                   >
@@ -877,6 +895,87 @@ export default function Home({
                   )}
                 </button>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* VEHICLE SELECTION MODAL FOR TRIP ASSIGNMENT */}
+      <AnimatePresence>
+        {showVehicleSelector && actionToPerform && (
+          <div className="fixed inset-0 bg-black/60 z-55 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-3xl p-6 shadow-2xl max-w-sm w-full border border-slate-100 flex flex-col gap-4"
+            >
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-base font-black text-[#0b224d]">Asignar Vehículo</h3>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">Selecciona el camión para este viaje</p>
+                </div>
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setShowVehicleSelector(false);
+                    setActionToPerform(null);
+                  }} 
+                  className="p-1 hover:bg-slate-100 rounded-full text-slate-400 cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="flex flex-col gap-2 max-h-[240px] overflow-y-auto pr-1">
+                {(user.vehicles || []).map((vh) => (
+                  <button
+                    key={vh.id}
+                    type="button"
+                    onClick={() => {
+                      if (actionToPerform.type === 'accept') {
+                        if (onAcceptTrip) {
+                          onAcceptTrip(actionToPerform.tripId, vh.plate, vh.type);
+                        }
+                        alert(`¡Carga aceptada! Vehículo ${vh.plate} asignado.`);
+                      } else {
+                        if (onCounterOfferTrip && actionToPerform.price) {
+                          onCounterOfferTrip(actionToPerform.tripId, actionToPerform.price, vh.plate, vh.type);
+                        }
+                        alert(`¡Contraoferta enviada! Vehículo ${vh.plate} asignado.`);
+                      }
+                      setShowVehicleSelector(false);
+                      setActionToPerform(null);
+                      onNavigateToView('activity');
+                    }}
+                    className="w-full p-3.5 bg-slate-50 hover:bg-slate-100/80 rounded-2xl border border-slate-100 hover:border-[#0b224d]/30 text-left transition-all flex justify-between items-center group cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-[#0b224d]/5 text-[#0b224d] rounded-lg group-hover:bg-[#0b224d] group-hover:text-white transition-colors">
+                        <Truck size={16} />
+                      </div>
+                      <div>
+                        <p className="text-xs font-black text-on-surface">{vh.type}</p>
+                        {vh.model && <p className="text-[9px] text-slate-400 font-bold">Mod. {vh.model}</p>}
+                      </div>
+                    </div>
+                    <span className="text-xs font-black bg-white px-2.5 py-1 border border-slate-200 rounded-md tracking-wider text-[#0b224d] group-hover:bg-[#0b224d] group-hover:text-white group-hover:border-transparent transition-all">
+                      {vh.plate}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowVehicleSelector(false);
+                  setActionToPerform(null);
+                }}
+                className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-750 font-bold rounded-xl text-xs transition-all cursor-pointer"
+              >
+                Cancelar
+              </button>
             </motion.div>
           </div>
         )}

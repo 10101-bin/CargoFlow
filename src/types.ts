@@ -1,5 +1,16 @@
 export type UserRole = 'cliente' | 'conductor' | 'admin';
 
+export interface Vehicle {
+  id: string;
+  plate: string;
+  type: string;       // Furgón, Camión Sencillo, Turbo, etc.
+  model?: string;
+  soatExpiry?: string;
+  soatPhoto?: string;
+  tecnomecanicaExpiry?: string;
+  tecnomecanicaPhoto?: string;
+}
+
 export interface UserProfile {
   name: string;
   email: string;
@@ -13,6 +24,9 @@ export interface UserProfile {
   vehicleType?: string;
   isComplete?: boolean;
   isAvailable?: boolean;
+  licenseExpiry?: string;
+  licensePhoto?: string;
+  vehicles?: Vehicle[];
   documentsUploaded?: {
     cedula: boolean;
     licencia: boolean;
