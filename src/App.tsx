@@ -971,7 +971,7 @@ export default function App() {
       <NotificationToast />
 
       <div className={`bg-background text-on-surface ${
-        ['home', 'activity', 'chat', 'profile', 'settings'].includes(view)
+        ['home', 'activity', 'chat', 'dashboard', 'profile', 'settings'].includes(view)
           ? 'h-screen flex flex-col overflow-hidden'
           : 'min-h-screen'
       }`}>
@@ -987,7 +987,7 @@ export default function App() {
       </AnimatePresence>
 
       {/* Global Header on main authenticated dashboards — flex-none so it doesn't steal from content area */}
-      {['home', 'activity', 'chat', 'profile', 'settings'].includes(view) && (
+      {['home', 'activity', 'chat', 'dashboard', 'profile', 'settings'].includes(view) && (
         <div className="flex-none">
           <Header
             user={user}
