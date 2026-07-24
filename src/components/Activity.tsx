@@ -179,7 +179,11 @@ export default function Activity({ user, trips, onNavigateToChat, onCancelTrip, 
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Conductor Asignado</p>
                             <p className="text-xs font-bold text-slate-700">{trip.conductorName || 'Conductor CargoFlow'}</p>
                             <div className="flex items-center gap-2 mt-0.5">
-                              {trip.conductorPlate && <span className="text-[10px] font-bold bg-slate-200 text-slate-600 px-1.5 rounded">{trip.conductorPlate}</span>}
+                              {(trip.conductorPlate || user.plateNumber) && (
+                                <span className="text-[10px] font-black bg-slate-900 text-white px-2 py-0.5 rounded-md uppercase tracking-wider">
+                                  Placa: {trip.conductorPlate || user.plateNumber}
+                                </span>
+                              )}
                               {trip.conductorVehicleType && <span className="text-[10px] text-slate-500 font-medium truncate">{trip.conductorVehicleType}</span>}
                             </div>
                           </div>
@@ -190,6 +194,13 @@ export default function Activity({ user, trips, onNavigateToChat, onCancelTrip, 
                           <div className="flex-1">
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Cliente Solicitante</p>
                             <p className="text-xs font-bold text-slate-700">{trip.clienteName || 'Cliente CargoFlow'}</p>
+                            {(trip.conductorPlate || user.plateNumber) && (
+                              <div className="mt-1">
+                                <span className="text-[10px] font-black bg-slate-900 text-white px-2 py-0.5 rounded-md uppercase tracking-wider">
+                                  Placa Asignada: {trip.conductorPlate || user.plateNumber}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </>
                       )}
@@ -198,9 +209,14 @@ export default function Activity({ user, trips, onNavigateToChat, onCancelTrip, 
 
                   {/* Card Footer with details */}
                   <div className="pt-4 border-t border-surface-container-high flex justify-between items-center">
-                    <div className="flex items-center gap-2 text-on-surface-variant font-medium text-xs">
+                    <div className="flex items-center gap-2 text-on-surface-variant font-medium text-xs flex-wrap">
                       <Truck size={14} className="text-outline" />
                       <span>{trip.vehicleType}</span>
+                      {(trip.conductorPlate || user.plateNumber) && (
+                        <span className="text-[10px] font-black bg-slate-900 text-white px-2 py-0.5 rounded-md uppercase tracking-wider">
+                          Placa: {trip.conductorPlate || user.plateNumber}
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       {trip.tag && (

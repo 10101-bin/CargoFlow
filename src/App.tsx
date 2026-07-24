@@ -88,7 +88,7 @@ export default function App() {
   // Chat messages
   const [chatMessages] = useState<ChatMessage[]>(INITIAL_CHAT_MESSAGES);
   const [unreadChatCount, setUnreadChatCount] = useState(0);
-  const [activeToast, setActiveToast] = useState<{ id: string; title: string; message: string; type?: string } | null>(null);
+  const [activeToast, setActiveToast] = useState<{ id: string; title: string; message: string; type?: string; tag?: string; tripId?: string } | null>(null);
   const [ratingTrip, setRatingTrip] = useState<Trip | null>(null);
 
   const handleCompleteTrip = async (trip: Trip) => {
@@ -229,6 +229,8 @@ export default function App() {
                   title: data.title || 'Nueva Notificación',
                   message: data.body || data.message || '',
                   type: data.type || (data.tag?.includes('chat') || data.title?.includes('Mensaje') ? 'chat' : 'info'),
+                  tag: data.tag || undefined,
+                  tripId: data.tag?.startsWith('chat-') ? data.tag.replace('chat-', '') : undefined,
                 });
               }
             }
