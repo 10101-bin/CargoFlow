@@ -90,6 +90,41 @@ export default function App() {
   const [unreadChatCount, setUnreadChatCount] = useState(0);
   const [activeToast, setActiveToast] = useState<{ id: string; title: string; message: string; type?: string; tag?: string; tripId?: string } | null>(null);
   const [ratingTrip, setRatingTrip] = useState<Trip | null>(null);
+  const [usersList, setUsersList] = useState<UserProfile[]>([]);
+
+  // Listen to all users for profile sync (photos, names, ratings)
+  useEffect(() => {
+    let unsubscribe = () => {};
+    const listenToUsers = async () => {
+      try {
+        const { db } = await import('./config/firebase');
+        const { collection, onSnapshot } = await import('firebase/firestore');
+        unsubscribe = onSnapshot(collection(db, 'users'), (snapshot) => {
+          const list: UserProfile[] = [];
+          snapshot.forEach((doc) => {
+            const data = doc.data();
+            list.push({
+              name: data.name || '',
+              email: data.email || '',
+              phone: data.phone || '',
+              role: data.role || 'cliente',
+              isVerified: data.isVerified || false,
+              rating: data.rating || 5,
+              balance: data.balance || 0,
+              photoURL: data.photoURL || undefined,
+              plateNumber: data.plateNumber || undefined,
+              vehicleType: data.vehicleType || undefined,
+            });
+          });
+          setUsersList(list);
+        });
+      } catch (e) {
+        console.warn('Error listening to users collection:', e);
+      }
+    };
+    listenToUsers();
+    return () => unsubscribe();
+  }, []);
 
   const handleCompleteTrip = async (trip: Trip) => {
     setTrips(prev => prev.map(t => t.id === trip.id ? { ...t, status: 'COMPLETADO' } : t));
@@ -1018,6 +1053,7 @@ export default function App() {
             <Activity 
               user={user}
               trips={trips} 
+              usersList={usersList}
               onNavigateToChat={(trip) => {
                 setActiveChatTrip(trip || null);
                 setView('chat');
@@ -1034,21 +1070,30 @@ export default function App() {
           )}
 
           {/* Rating Service Modal */}
-          {ratingTrip && (
-            <Rating
-              driverName={user.email === ratingTrip.clienteId ? (ratingTrip.conductorName || 'Conductor Asignado') : (ratingTrip.clienteName || 'Cliente Solicitante')}
-              photoURL={user.email === ratingTrip.clienteId ? ratingTrip.conductorPhotoURL : ratingTrip.clientePhotoURL}
-              tripId={`#CF-${ratingTrip.id}`}
-              onClose={() => setRatingTrip(null)}
-              onSubmit={(stars, comment, tip) => handleSaveRating(stars, comment, tip)}
-            />
-          )}
+          {ratingTrip && (() => {
+            const isClient = user.email === ratingTrip.clienteId;
+            const partnerEmail = isClient ? ratingTrip.conductorId : ratingTrip.clienteId;
+            const liveUser = usersList.find(u => u.email === partnerEmail);
+            const displayPhoto = liveUser?.photoURL || (isClient ? ratingTrip.conductorPhotoURL : ratingTrip.clientePhotoURL);
+            const displayName = liveUser?.name || (isClient ? (ratingTrip.conductorName || 'Conductor Asignado') : (ratingTrip.clienteName || 'Cliente Solicitante'));
+
+            return (
+              <Rating
+                driverName={displayName}
+                photoURL={displayPhoto}
+                tripId={`#CF-${ratingTrip.id}`}
+                onClose={() => setRatingTrip(null)}
+                onSubmit={(stars, comment, tip) => handleSaveRating(stars, comment, tip)}
+              />
+            );
+          })()}
 
           {view === 'chat' && (
             <Chat 
               user={user}
               activeTrip={activeChatTrip}
               trips={trips}
+              usersList={usersList}
               initialMessages={chatMessages} 
               onBack={() => setView('activity')} 
               onSelectTripChat={(trip) => setActiveChatTrip(trip)}

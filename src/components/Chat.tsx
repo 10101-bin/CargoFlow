@@ -7,12 +7,13 @@ interface ChatProps {
   user: UserProfile;
   activeTrip?: Trip | null;
   trips?: Trip[];
+  usersList?: UserProfile[];
   initialMessages: ChatMessage[];
   onBack: () => void;
   onSelectTripChat?: (trip: Trip) => void;
 }
 
-export default function Chat({ user, activeTrip, trips = [], initialMessages, onBack, onSelectTripChat }: ChatProps) {
+export default function Chat({ user, activeTrip, trips = [], usersList = [], initialMessages, onBack, onSelectTripChat }: ChatProps) {
   const [selectedTripState, setSelectedTripState] = useState<Trip | null>(activeTrip || null);
   const [inboxTab, setInboxTab] = useState<'activos' | 'historial'>('activos');
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
@@ -85,8 +86,14 @@ export default function Chat({ user, activeTrip, trips = [], initialMessages, on
   };
 
   const isClientView = selectedTripState ? user.email === selectedTripState.clienteId : false;
+  const partnerEmail = selectedTripState
+    ? (isClientView ? selectedTripState.conductorId : selectedTripState.clienteId)
+    : undefined;
+
+  const livePartnerUser = usersList.find(u => u.email === partnerEmail);
+
   const chatPartnerName = selectedTripState
-    ? (isClientView ? selectedTripState.conductorName || 'Conductor Asignado' : selectedTripState.clienteName || 'Cliente Solicitante')
+    ? (livePartnerUser?.name || (isClientView ? selectedTripState.conductorName || 'Conductor Asignado' : selectedTripState.clienteName || 'Cliente Solicitante'))
     : 'Soporte CargoFlow';
 
   const chatPartnerSubtitle = selectedTripState
@@ -95,15 +102,11 @@ export default function Chat({ user, activeTrip, trips = [], initialMessages, on
         : `Cliente Flete #${selectedTripState.id}`)
     : 'Canal oficial de logística';
 
-  const partnerEmail = selectedTripState
-    ? (isClientView ? selectedTripState.conductorId : selectedTripState.clienteId)
-    : undefined;
-
   const rawPartnerPhoto = selectedTripState
     ? (isClientView ? selectedTripState.conductorPhotoURL : selectedTripState.clientePhotoURL)
     : undefined;
 
-  const chatPartnerPhoto = rawPartnerPhoto || (partnerEmail === user.email ? user.photoURL : undefined);
+  const chatPartnerPhoto = livePartnerUser?.photoURL || rawPartnerPhoto || (partnerEmail === user.email ? user.photoURL : undefined);
 
   const chatCollectionPath = selectedTripState ? `trips/${selectedTripState.id}/chat_messages` : 'global_chat';
   const mainScrollRef = useRef<HTMLDivElement>(null);
@@ -304,8 +307,10 @@ export default function Chat({ user, activeTrip, trips = [], initialMessages, on
           ) : (
             displayedTrips.map((trip) => {
               const isClient = user.email === trip.clienteId;
-              const partnerName = isClient ? (trip.conductorName || 'Conductor Asignado') : (trip.clienteName || 'Cliente Solicitante');
-              const partnerPhoto = isClient ? trip.conductorPhotoURL : trip.clientePhotoURL;
+              const targetPartnerEmail = isClient ? trip.conductorId : trip.clienteId;
+              const liveUser = usersList.find(u => u.email === targetPartnerEmail);
+              const partnerName = liveUser?.name || (isClient ? (trip.conductorName || 'Conductor Asignado') : (trip.clienteName || 'Cliente Solicitante'));
+              const partnerPhoto = liveUser?.photoURL || (isClient ? trip.conductorPhotoURL : trip.clientePhotoURL);
 
               return (
                 <div

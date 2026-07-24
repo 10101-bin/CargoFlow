@@ -6,6 +6,7 @@ import { UserProfile, Trip } from '../types';
 interface ActivityProps {
   user: UserProfile;
   trips: Trip[];
+  usersList?: UserProfile[];
   onNavigateToChat: (trip?: Trip) => void;
   onCancelTrip: (tripId: string) => void;
   onEditTrip?: (trip: Trip) => void;
@@ -14,7 +15,7 @@ interface ActivityProps {
   onOpenRating?: (trip: Trip) => void;
 }
 
-export default function Activity({ user, trips, onNavigateToChat, onCancelTrip, onEditTrip, onResolveCounterOffer, onCompleteTrip, onOpenRating }: ActivityProps) {
+export default function Activity({ user, trips, usersList = [], onNavigateToChat, onCancelTrip, onEditTrip, onResolveCounterOffer, onCompleteTrip, onOpenRating }: ActivityProps) {
   const [filter, setFilter] = useState<'activos' | 'historial'>('activos');
 
   // Filter trips based on selection
@@ -170,42 +171,52 @@ export default function Activity({ user, trips, onNavigateToChat, onCancelTrip, 
                   )}
 
                   {/* Participant Info Section (Client or Driver Details) */}
-                  {trip.status !== 'PENDIENTE' && (
-                    <div className="mt-2 p-3 bg-slate-50 border border-slate-100 rounded-xl flex items-center gap-3">
-                      {user.email === trip.clienteId ? (
-                        <>
-                          {renderAvatar(trip.conductorPhotoURL || (trip.conductorId === user.email ? user.photoURL : undefined), trip.conductorName, "w-10 h-10 text-xs")}
-                          <div className="flex-1">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Conductor Asignado</p>
-                            <p className="text-xs font-bold text-slate-700">{trip.conductorName || 'Conductor CargoFlow'}</p>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              {(trip.conductorPlate || user.plateNumber) && (
-                                <span className="text-[10px] font-black bg-slate-900 text-white px-2 py-0.5 rounded-md uppercase tracking-wider">
-                                  Placa: {trip.conductorPlate || user.plateNumber}
-                                </span>
-                              )}
-                              {trip.conductorVehicleType && <span className="text-[10px] text-slate-500 font-medium truncate">{trip.conductorVehicleType}</span>}
-                            </div>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          {renderAvatar(trip.clientePhotoURL || (trip.clienteId === user.email ? user.photoURL : undefined), trip.clienteName, "w-10 h-10 text-xs")}
-                          <div className="flex-1">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Cliente Solicitante</p>
-                            <p className="text-xs font-bold text-slate-700">{trip.clienteName || 'Cliente CargoFlow'}</p>
-                            {(trip.conductorPlate || user.plateNumber) && (
-                              <div className="mt-1">
-                                <span className="text-[10px] font-black bg-slate-900 text-white px-2 py-0.5 rounded-md uppercase tracking-wider">
-                                  Placa Asignada: {trip.conductorPlate || user.plateNumber}
-                                </span>
+                  {trip.status !== 'PENDIENTE' && (() => {
+                    const conductorUser = usersList.find(u => u.email === trip.conductorId);
+                    const conductorPhoto = conductorUser?.photoURL || trip.conductorPhotoURL;
+                    const conductorName = conductorUser?.name || trip.conductorName || 'Conductor CargoFlow';
+
+                    const clienteUser = usersList.find(u => u.email === trip.clienteId);
+                    const clientePhoto = clienteUser?.photoURL || trip.clientePhotoURL;
+                    const clienteName = clienteUser?.name || trip.clienteName || 'Cliente CargoFlow';
+
+                    return (
+                      <div className="mt-2 p-3 bg-slate-50 border border-slate-100 rounded-xl flex items-center gap-3">
+                        {user.email === trip.clienteId ? (
+                          <>
+                            {renderAvatar(conductorPhoto || (trip.conductorId === user.email ? user.photoURL : undefined), conductorName, "w-10 h-10 text-xs")}
+                            <div className="flex-1">
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Conductor Asignado</p>
+                              <p className="text-xs font-bold text-slate-700">{conductorName}</p>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                {(trip.conductorPlate || user.plateNumber) && (
+                                  <span className="text-[10px] font-black bg-slate-900 text-white px-2 py-0.5 rounded-md uppercase tracking-wider">
+                                    Placa: {trip.conductorPlate || user.plateNumber}
+                                  </span>
+                                )}
+                                {trip.conductorVehicleType && <span className="text-[10px] text-slate-500 font-medium truncate">{trip.conductorVehicleType}</span>}
                               </div>
-                            )}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  )}
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            {renderAvatar(clientePhoto || (trip.clienteId === user.email ? user.photoURL : undefined), clienteName, "w-10 h-10 text-xs")}
+                            <div className="flex-1">
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Cliente Solicitante</p>
+                              <p className="text-xs font-bold text-slate-700">{clienteName}</p>
+                              {(trip.conductorPlate || user.plateNumber) && (
+                                <div className="mt-1">
+                                  <span className="text-[10px] font-black bg-slate-900 text-white px-2 py-0.5 rounded-md uppercase tracking-wider">
+                                    Placa Asignada: {trip.conductorPlate || user.plateNumber}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   {/* Card Footer with details */}
                   <div className="pt-4 border-t border-surface-container-high flex justify-between items-center">
