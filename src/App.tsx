@@ -1212,6 +1212,7 @@ export default function App() {
           {view === 'profile' && (
             <Profile 
               user={user} 
+              trips={trips}
               onUpdateProfile={handleUpdateProfile} 
               onDeposit={handleDeposit} 
               onLogout={handleLogout}

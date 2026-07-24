@@ -5,10 +5,11 @@ import {
   Trash2, CheckCircle2, Eye, Image, UserCheck 
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { UserProfile, Vehicle } from '../types';
+import { UserProfile, Vehicle, Trip } from '../types';
 
 interface ProfileProps {
   user: UserProfile;
+  trips: Trip[];
   onUpdateProfile: (updates: Partial<UserProfile>) => void;
   onDeposit: (amount: number) => void;
   onLogout: () => void;
@@ -97,7 +98,24 @@ const getDocValidity = (expiryDate?: string, photo?: string) => {
   };
 };
 
-export default function Profile({ user, onUpdateProfile, onDeposit, onLogout, onNavigateToSettings }: ProfileProps) {
+export default function Profile({ user, trips, onUpdateProfile, onDeposit, onLogout, onNavigateToSettings }: ProfileProps) {
+  // Calculate rating statistics
+  const getRatingStats = () => {
+    let ratedTrips = [];
+    if (user.role === 'conductor') {
+      ratedTrips = trips.filter(t => t.conductorId === user.email && t.ratedByCliente && t.clienteRating);
+      const totalStars = ratedTrips.reduce((acc, t) => acc + (t.clienteRating?.stars || 0), 0);
+      return { count: ratedTrips.length, totalStars };
+    } else if (user.role === 'cliente') {
+      ratedTrips = trips.filter(t => t.clienteId === user.email && t.ratedByConductor && t.conductorRating);
+      const totalStars = ratedTrips.reduce((acc, t) => acc + (t.conductorRating?.stars || 0), 0);
+      return { count: ratedTrips.length, totalStars };
+    }
+    return { count: 0, totalStars: 0 };
+  };
+
+  const ratingStats = getRatingStats();
+
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [depositAmount, setDepositAmount] = useState('200000');
   
@@ -343,7 +361,9 @@ export default function Profile({ user, onUpdateProfile, onDeposit, onLogout, on
             </span>
             <span className="w-1 h-1 rounded-full bg-outline-variant"></span>
             <Star size={12} className="text-amber-500" fill="currentColor" />
-            <span className="text-xs font-bold text-on-surface">{user.rating}</span>
+            <span className="text-xs font-bold text-on-surface">
+              {user.rating} {ratingStats.count > 0 && `(${ratingStats.totalStars}★ en ${ratingStats.count} viajes)`}
+            </span>
           </div>
 
           <button 
@@ -785,7 +805,7 @@ export default function Profile({ user, onUpdateProfile, onDeposit, onLogout, on
       {/* ── PERSONAL CÉDULA UPDATE MODAL ────────────────────── */}
       <AnimatePresence>
         {showCedulaModal && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4">
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -866,7 +886,7 @@ export default function Profile({ user, onUpdateProfile, onDeposit, onLogout, on
       {/* ── DRIVER LICENSE UPDATE MODAL ─────────────────────── */}
       <AnimatePresence>
         {showLicenseModal && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4">
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -946,7 +966,7 @@ export default function Profile({ user, onUpdateProfile, onDeposit, onLogout, on
       {/* ── ADD VEHICLE MODAL ──────────────────────────────── */}
       <AnimatePresence>
         {showAddVehicleModal && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4">
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -1114,7 +1134,7 @@ export default function Profile({ user, onUpdateProfile, onDeposit, onLogout, on
       {/* DEPOSIT WALLET MODAL */}
       <AnimatePresence>
         {showDepositModal && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4">
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -1168,7 +1188,7 @@ export default function Profile({ user, onUpdateProfile, onDeposit, onLogout, on
       {/* EDIT PROFILE MODAL */}
       <AnimatePresence>
         {showEditModal && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4">
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
