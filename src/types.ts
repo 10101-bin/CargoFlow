@@ -9,9 +9,12 @@ export interface Vehicle {
   soatPhoto?: string;
   tecnomecanicaExpiry?: string;
   tecnomecanicaPhoto?: string;
+  propiedadPhoto?: string;
+  propiedadNumber?: string;
 }
 
 export interface UserProfile {
+  id?: string; // Firestore document ID (e.g. uid_role)
   name: string;
   email: string;
   phone: string;
@@ -26,6 +29,8 @@ export interface UserProfile {
   isAvailable?: boolean;
   licenseExpiry?: string;
   licensePhoto?: string;
+  cedulaNumber?: string;
+  cedulaPhoto?: string;
   vehicles?: Vehicle[];
   documentsUploaded?: {
     cedula: boolean;

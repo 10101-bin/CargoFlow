@@ -105,6 +105,7 @@ export default function App() {
           snapshot.forEach((doc) => {
             const data = doc.data();
             list.push({
+              id: doc.id,
               name: data.name || '',
               email: data.email || '',
               phone: data.phone || '',
@@ -115,6 +116,11 @@ export default function App() {
               photoURL: data.photoURL || undefined,
               plateNumber: data.plateNumber || undefined,
               vehicleType: data.vehicleType || undefined,
+              licenseExpiry: data.licenseExpiry || undefined,
+              licensePhoto: data.licensePhoto || undefined,
+              cedulaNumber: data.cedulaNumber || undefined,
+              cedulaPhoto: data.cedulaPhoto || undefined,
+              vehicles: data.vehicles || [],
             });
           });
           setUsersList(list);
@@ -138,6 +144,28 @@ export default function App() {
         status: 'COMPLETADO',
         completedAt: new Date().toISOString()
       });
+
+      // Transaction: Deduct client, credit driver (minus 10% platform fee)
+      const clientUser = usersList.find(u => u.email === trip.clienteId && u.role === 'cliente');
+      const conductorUser = usersList.find(u => u.email === trip.conductorId && u.role === 'conductor');
+
+      if (clientUser && clientUser.id) {
+        await updateDoc(doc(db, 'users', clientUser.id), {
+          balance: Math.max(0, (clientUser.balance || 0) - trip.price)
+        });
+      }
+      if (conductorUser && conductorUser.id) {
+        await updateDoc(doc(db, 'users', conductorUser.id), {
+          balance: (conductorUser.balance || 0) + (trip.price * 0.9)
+        });
+      }
+
+      // Update local state if current user is involved
+      if (user.email === trip.clienteId) {
+        setUser(prev => ({ ...prev, balance: Math.max(0, prev.balance - trip.price) }));
+      } else if (user.email === trip.conductorId) {
+        setUser(prev => ({ ...prev, balance: prev.balance + (trip.price * 0.9) }));
+      }
 
       await addDoc(collection(db, `trips/${trip.id}/chat_messages`), {
         senderEmail: 'system@cargoflow.com',
@@ -181,8 +209,55 @@ export default function App() {
       const { doc, updateDoc } = await import('firebase/firestore');
       await updateDoc(doc(db, 'trips', currentTrip.id), updatedData);
 
+      // Apply tip transaction if client rated with a tip
+      if (isClient && tip && tip > 0) {
+        const clientUser = usersList.find(u => u.email === currentTrip.clienteId && u.role === 'cliente');
+        const conductorUser = usersList.find(u => u.email === currentTrip.conductorId && u.role === 'conductor');
+
+        if (clientUser && clientUser.id) {
+          await updateDoc(doc(db, 'users', clientUser.id), {
+            balance: Math.max(0, (clientUser.balance || 0) - tip)
+          });
+        }
+        if (conductorUser && conductorUser.id) {
+          await updateDoc(doc(db, 'users', conductorUser.id), {
+            balance: (conductorUser.balance || 0) + tip
+          });
+        }
+
+        // Update local state if involved
+        if (user.email === currentTrip.clienteId) {
+          setUser(prev => ({ ...prev, balance: Math.max(0, prev.balance - tip) }));
+        } else if (user.email === currentTrip.conductorId) {
+          setUser(prev => ({ ...prev, balance: prev.balance + tip }));
+        }
+      }
+
       const recipientEmail = isClient ? currentTrip.conductorId : currentTrip.clienteId;
+      const recipientRole = isClient ? 'conductor' : 'cliente';
       if (recipientEmail) {
+        // Recalculate average stars from current trips state plus latest update
+        const updatedTrips = trips.map(t => t.id === currentTrip.id ? { ...t, ...updatedData } : t);
+        const ratedTrips = updatedTrips.filter(t => 
+          recipientRole === 'conductor'
+            ? (t.conductorId === recipientEmail && t.ratedByCliente && t.clienteRating)
+            : (t.clienteId === recipientEmail && t.ratedByConductor && t.conductorRating)
+        );
+        let newRating = 5;
+        if (ratedTrips.length > 0) {
+          const sum = ratedTrips.reduce((acc, t) => 
+            acc + (recipientRole === 'conductor' ? (t.clienteRating?.stars || 5) : (t.conductorRating?.stars || 5))
+          , 0);
+          newRating = parseFloat((sum / ratedTrips.length).toFixed(1));
+        }
+
+        const recipientUser = usersList.find(u => u.email === recipientEmail && u.role === recipientRole);
+        if (recipientUser && recipientUser.id) {
+          await updateDoc(doc(db, 'users', recipientUser.id), {
+            rating: newRating
+          });
+        }
+
         const { sendDbNotification } = await import('./services/notificationService');
         sendDbNotification(
           recipientEmail,
