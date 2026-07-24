@@ -17,7 +17,8 @@ import {
   X,
   Layers,
   Terminal,
-  Zap
+  Zap,
+  Star
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { UserProfile, Trip } from '../types';
