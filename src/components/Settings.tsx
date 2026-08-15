@@ -24,7 +24,7 @@ interface SettingsProps {
   onShareApp: () => void;
 }
 
-type SectionKey = 'cuenta' | 'notificaciones' | 'vehiculo' | 'apariencia' | 'info' | 'privacidad';
+type SectionKey = 'cuenta' | 'notificaciones' | 'vehiculo' | 'apariencia' | 'info' | 'privacidad' | 'gestion';
 
 // ── Toggle component ─────────────────────────────────────────
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
@@ -678,7 +678,7 @@ export default function Settings({ user, onBack, onLogout, onInstallApp, onShare
                   onChange={(v) => { 
                     setSysSoundEnabled(v); 
                     localStorage.setItem('cf_sys_sound', String(v));
-                    if (v) playNotificationSound(`/sounds/${SYSTEM_TONES.find(t=>t.id===sysTone)?.file || '550332__wax_vibe__cyberpunk-bass.wav'}`);
+                    if (v) playNotificationSound('/sounds/550332__wax_vibe__cyberpunk-bass.wav');
                   }}
                 />
               }

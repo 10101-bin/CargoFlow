@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Search, MapPin, History, Menu, Truck, Star, Info, X, Navigation, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Trip, UserProfile } from '../types';
+import { HybridMapContainer } from '../maps/components/HybridMapContainer';
 
 interface HomeProps {
   user: UserProfile;
@@ -14,7 +15,7 @@ interface HomeProps {
   onEditShipment?: (trip: Trip) => void;
   onAcceptTrip?: (tripId: string, assignedPlate?: string, assignedType?: string) => void;
   onCounterOfferTrip?: (tripId: string, price: number, assignedPlate?: string, assignedType?: string) => void;
-  onNavigateToView: (view: 'home' | 'activity' | 'chat' | 'dashboard' | 'profile') => void;
+  onNavigateToView: (view: 'home' | 'activity' | 'chat' | 'dashboard' | 'profile' | 'settings') => void;
   onUpdateProfile?: (updates: Partial<UserProfile>) => void;
   onLogout: () => void;
 }
@@ -342,17 +343,24 @@ export default function Home({
         </div>
       )}
 
+      {/* Left-Aligned Compact Status Badge for Conductors when no pending trip */}
+      {user.role === 'conductor' && !pendingTrip && (
+        <div className="absolute top-20 left-4 z-20 max-w-[240px] pointer-events-auto">
+          <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl p-2.5 px-3 border border-slate-200/80 animate-pulse flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-xl bg-blue-50 text-primary-container flex items-center justify-center flex-shrink-0 font-bold shadow-xs">
+              <Search size={14} />
+            </div>
+            <div className="flex flex-col min-w-0">
+              <h4 className="font-extrabold text-xs text-slate-800 leading-tight truncate">Buscando cargas...</h4>
+              <p className="text-[10px] text-slate-500 font-medium leading-tight truncate">Sin fletes cercanos ahora.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Map Layer Container */}
       <div className="absolute inset-0 z-0">
-        <div
-          className="w-full h-full bg-cover bg-center"
-          style={{
-            backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuCQwz6XcyO5DjH3yVB6NJILr3-5cgY-k28ESfQNb8M5V-F79d-5ntLd-a76ITY9X4huVALhedGmILMq3OTYhcgMuosjwRc4xeQUoWbmeCW37uXJr3cp1KWuuclZigPjVyRFs2JN_pgyIQ4Twel2vYS149-O8eHPznuf5qp4eMFrOoUEdtmp4q6DNptBM5gA7_CYqIpwqKddz3tVb2yUrUKIIy2MqJw6sTO4gbSStqGVSZAagP9nPI4P')`,
-          }}
-        />
-
-        {/* Overlay Darkener for high-key readability */}
-        <div className="absolute inset-0 bg-white/5 pointer-events-none" />
+        <HybridMapContainer className="w-full h-full rounded-none border-none shadow-none" initialHeight="h-full" />
 
         {/* Interactive Vehicle Markers */}
         {trucksOnMap.map((trk) => (
@@ -629,19 +637,7 @@ export default function Home({
                 </div>
               )}
             </div>
-          ) : (
-            <div className="bg-white rounded-2xl shadow-[0px_12px_40px_rgba(0,0,0,0.15)] p-5 border border-surface-container animate-pulse">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-primary-container">
-                  <Search size={20} />
-                </div>
-                <div>
-                  <h4 className="font-extrabold text-sm text-on-surface">Buscando cargas...</h4>
-                  <p className="text-xs text-on-surface-variant">No hay fletes disponibles cerca de ti en este momento.</p>
-                </div>
-              </div>
-            </div>
-          )
+          ) : null
         ) : (
           /* CLIENT BOTTOM CARD: RASTREO DE ENVÍO EN CURSO */
           (() => {
@@ -650,25 +646,7 @@ export default function Home({
               || (trips || [])[0];
 
             if (!clientActiveTrip) {
-              return (
-                <div className="bg-white rounded-2xl shadow-[0px_12px_40px_rgba(0,0,0,0.12)] p-5 border border-surface-container">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-primary-container">
-                      <Truck size={20} />
-                    </div>
-                    <div>
-                      <h4 className="font-extrabold text-sm text-on-surface">¿Listo para enviar tu carga?</h4>
-                      <p className="text-xs text-on-surface-variant">Solicita tu servicio de transporte en segundos.</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setShowShipmentModal(true)}
-                    className="w-full h-11 rounded-xl bg-primary-container text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md hover:bg-primary transition-colors cursor-pointer"
-                  >
-                    + Solicitar Nuevo Flete
-                  </button>
-                </div>
-              );
+              return null;
             }
 
             return (

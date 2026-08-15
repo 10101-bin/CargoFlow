@@ -53,6 +53,7 @@ export interface Trip {
   tag?: string; // e.g. "REFRIGERADO", "FRÁGIL"
   notes?: string; // Additional details for the trip
   createdAt?: string;
+  completedAt?: string;
   clienteId?: string;
   clienteName?: string;
   clientePhotoURL?: string;

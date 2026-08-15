@@ -29,7 +29,7 @@ interface HeaderProps {
   user: UserProfile;
   trips: Trip[];
   linkedAccounts?: UserProfile[];
-  onNavigateToView: (view: 'home' | 'activity' | 'chat' | 'profile' | 'settings') => void;
+  onNavigateToView: (view: 'home' | 'activity' | 'chat' | 'dashboard' | 'profile' | 'settings') => void;
   onUpdateProfile?: (updates: Partial<UserProfile>) => void;
   onLogout: () => void;
   onAddAccount?: () => void;
