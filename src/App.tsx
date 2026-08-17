@@ -1113,7 +1113,7 @@ export default function App() {
             ['home', 'settings'].includes(view)
               ? 'flex-1 overflow-hidden'
               : ['activity', 'chat', 'dashboard', 'profile'].includes(view)
-              ? 'flex-1 overflow-y-auto pb-28'
+              ? 'flex-1 overflow-y-auto pb-5'
               : 'min-h-screen'
           }`}
         >
