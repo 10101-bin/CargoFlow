@@ -531,6 +531,9 @@ export default function App() {
 
   // Bottom Navigation View Change
   const handleViewChange = (newView: 'home' | 'activity' | 'chat' | 'dashboard' | 'profile') => {
+    if (newView !== 'chat') {
+      setActiveChatTrip(null);
+    }
     setView(newView);
   };
 

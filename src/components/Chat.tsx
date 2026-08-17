@@ -23,11 +23,12 @@ export default function Chat({ user, activeTrip, trips = [], usersList = [], ini
 
   useEffect(() => {
     setSelectedTripState(activeTrip || null);
-  }, [activeTrip]);
+  }, [activeTrip?.id]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+
 
   // Compress image to lightweight JPEG Base64 Data URL (0-cost client-side processing)
   const compressAndConvertImage = (file: File): Promise<string> => {
@@ -251,7 +252,13 @@ export default function Chat({ user, activeTrip, trips = [], usersList = [], ini
         {/* Top Header */}
         <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm flex items-center justify-between px-4 h-[72px] border-b border-surface-container">
           <div className="flex items-center gap-3">
-            <button onClick={onBack} className="text-on-surface-variant hover:text-primary p-2 -ml-2 rounded-full cursor-pointer">
+            <button 
+              onClick={() => {
+                if (onSelectTripChat) onSelectTripChat(null as any);
+                onBack();
+              }} 
+              className="text-on-surface-variant hover:text-primary p-2 -ml-2 rounded-full cursor-pointer"
+            >
               <ArrowLeft size={20} />
             </button>
             <div className="flex items-center gap-2">
@@ -355,7 +362,10 @@ export default function Chat({ user, activeTrip, trips = [], usersList = [], ini
       <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm flex items-center justify-between px-4 h-[72px] border-b border-surface-container">
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setSelectedTripState(null)}
+            onClick={() => {
+              setSelectedTripState(null);
+              if (onSelectTripChat) onSelectTripChat(null as any);
+            }}
             className="text-on-surface-variant hover:text-primary transition-colors p-2 -ml-2 rounded-full active:bg-surface-container-low focus:outline-none cursor-pointer"
           >
             <ArrowLeft size={20} />
