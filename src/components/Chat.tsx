@@ -248,9 +248,9 @@ export default function Chat({ user, activeTrip, trips = [], usersList = [], ini
     const displayedTrips = inboxTab === 'activos' ? activeInboxTrips : historyInboxTrips;
 
     return (
-      <div className="bg-background min-h-screen flex flex-col font-sans pb-28 pt-20">
+      <div className="bg-background flex flex-col font-sans pb-28">
         {/* Top Header */}
-        <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm flex items-center justify-between px-4 h-[72px] border-b border-surface-container">
+        <header className="sticky top-0 z-30 bg-white shadow-xs flex items-center justify-between px-4 py-3 border-b border-surface-container flex-shrink-0">
           <div className="flex items-center gap-3">
             <button 
               onClick={() => {
@@ -274,7 +274,7 @@ export default function Chat({ user, activeTrip, trips = [], usersList = [], ini
         </header>
 
         {/* Tab Selector: Activos vs Historial */}
-        <div className="px-4 pt-3 pb-2 bg-white border-b border-slate-100 flex gap-2">
+        <div className="px-4 pt-3 pb-2 bg-white border-b border-slate-100 flex gap-2 sticky top-[57px] z-20">
           <button
             onClick={() => setInboxTab('activos')}
             className={`flex-1 py-2.5 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
@@ -357,9 +357,9 @@ export default function Chat({ user, activeTrip, trips = [], usersList = [], ini
   }
 
   return (
-    <div className="bg-background min-h-screen flex flex-col overflow-hidden font-sans antialiased">
+    <div className="bg-background flex flex-col font-sans antialiased pb-28 min-h-screen">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm flex items-center justify-between px-4 h-[72px] border-b border-surface-container">
+      <header className="sticky top-0 z-30 bg-white shadow-xs flex items-center justify-between px-4 py-3 border-b border-surface-container flex-shrink-0">
         <div className="flex items-center gap-2">
           <button
             onClick={() => {
@@ -373,26 +373,26 @@ export default function Chat({ user, activeTrip, trips = [], usersList = [], ini
           
           <div className="flex items-center gap-3">
             <div className="relative">
-              {renderAvatar(chatPartnerPhoto, chatPartnerName, "w-11 h-11 text-xs")}
-              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+              {renderAvatar(chatPartnerPhoto, chatPartnerName, "w-10 h-10 text-xs")}
+              <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full"></div>
             </div>
             <div className="flex flex-col">
-              <span className="font-extrabold text-sm text-on-surface">{chatPartnerName}</span>
-              <span className="text-[11px] text-on-surface-variant font-medium">{chatPartnerSubtitle}</span>
+              <span className="font-extrabold text-sm text-on-surface leading-tight">{chatPartnerName}</span>
+              <span className="text-[10px] text-on-surface-variant font-medium leading-tight">{chatPartnerSubtitle}</span>
             </div>
           </div>
         </div>
 
         <button 
           onClick={() => alert(`Llamando a ${chatPartnerName}...`)}
-          className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container hover:bg-surface-container-high text-primary-container transition-colors active:scale-95 focus:outline-none"
+          className="w-9 h-9 flex items-center justify-center rounded-full bg-surface-container hover:bg-surface-container-high text-primary-container transition-colors active:scale-95 focus:outline-none"
         >
-          <Phone size={18} fill="currentColor" />
+          <Phone size={16} fill="currentColor" />
         </button>
       </header>
 
       {/* Chat Canvas Area */}
-      <main ref={mainScrollRef} className="flex-1 overflow-y-auto no-scrollbar p-4 pt-24 pb-32 flex flex-col gap-6 bg-background">
+      <main ref={mainScrollRef} className="flex-1 overflow-y-auto no-scrollbar p-4 pt-4 pb-28 flex flex-col gap-6 bg-background">
         {/* Date Separator */}
         <div className="flex justify-center">
           <span className="bg-surface-container text-on-surface-variant font-bold text-[10px] tracking-widest px-3 py-1 rounded-full uppercase">
