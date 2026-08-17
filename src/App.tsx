@@ -908,9 +908,10 @@ export default function App() {
                 if (!isInitial) {
                   // NOTIFICATIONS FOR REAL-TIME UPDATES
 
-                  // 1. Client creates trip -> Conductors get notified
+                  // 1. Client creates trip -> Active Conductors get notified
                   if (change.type === 'added' && tripData.status === 'PENDIENTE') {
-                    if ((user.role === 'conductor' || user.role === 'admin') && tripData.clienteId !== user.email) {
+                    const isConductorAvailable = user.isAvailable ?? true;
+                    if ((user.role === 'conductor' || user.role === 'admin') && tripData.clienteId !== user.email && isConductorAvailable) {
                       notify({
                         title: '📦 ¡Nuevo Flete Disponible!',
                         body: `${tripData.clienteName || 'Un cliente'} solicita flete (${tripData.vehicleType}): ${tripData.origin} → ${tripData.destination} por $${tripData.price.toLocaleString('es-CO')} COP`,
