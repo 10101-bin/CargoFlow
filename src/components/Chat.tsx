@@ -248,9 +248,9 @@ export default function Chat({ user, activeTrip, trips = [], usersList = [], ini
     const displayedTrips = inboxTab === 'activos' ? activeInboxTrips : historyInboxTrips;
 
     return (
-      <div className="bg-background flex flex-col font-sans pb-28">
+      <div className="bg-background flex flex-col font-sans pb-28 pt-16">
         {/* Top Header */}
-        <header className="sticky top-0 z-30 bg-white shadow-xs flex items-center justify-between px-4 py-3 border-b border-surface-container flex-shrink-0">
+        <header className="sticky top-16 z-30 bg-white shadow-xs flex items-center justify-between px-4 py-3 border-b border-surface-container flex-shrink-0">
           <div className="flex items-center gap-3">
             <button 
               onClick={() => {
@@ -274,7 +274,7 @@ export default function Chat({ user, activeTrip, trips = [], usersList = [], ini
         </header>
 
         {/* Tab Selector: Activos vs Historial */}
-        <div className="px-4 pt-3 pb-2 bg-white border-b border-slate-100 flex gap-2 sticky top-[57px] z-20">
+        <div className="px-4 pt-3 pb-2 bg-white border-b border-slate-100 flex gap-2 sticky top-[121px] z-20">
           <button
             onClick={() => setInboxTab('activos')}
             className={`flex-1 py-2.5 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
@@ -357,9 +357,9 @@ export default function Chat({ user, activeTrip, trips = [], usersList = [], ini
   }
 
   return (
-    <div className="bg-background flex flex-col font-sans antialiased pb-28 min-h-screen">
+    <div className="bg-background flex flex-col font-sans antialiased pb-28 pt-16 min-h-screen">
       {/* Header */}
-      <header className="sticky top-0 z-30 bg-white shadow-xs flex items-center justify-between px-4 py-3 border-b border-surface-container flex-shrink-0">
+      <header className="sticky top-16 z-30 bg-white shadow-xs flex items-center justify-between px-4 py-3 border-b border-surface-container flex-shrink-0">
         <div className="flex items-center gap-2">
           <button
             onClick={() => {
