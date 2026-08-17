@@ -110,15 +110,17 @@ export const HybridMapContainer: React.FC<HybridMapContainerProps> = ({
       {/* Map DOM Container */}
       <div ref={containerRef} className="w-full h-full z-0 cursor-crosshair" />
 
-      {/* Top Overlay: Network Status Badge */}
-      <div className="absolute top-4 left-4 right-4 z-10 pointer-events-none flex justify-center">
-        <MapStatusBadge
-          isOnline={mapState.isOnline}
-          providerName={mapState.providerName}
-          isAutoSwitch={mapState.isAutoSwitch}
-          onOpenRegionManager={() => setIsRegionModalOpen(true)}
-        />
-      </div>
+      {/* Top Overlay: Network Status Badge (Shown only when offline to prevent header overlap) */}
+      {!mapState.isOnline && (
+        <div className="absolute top-32 left-4 right-4 z-10 pointer-events-none flex justify-center">
+          <MapStatusBadge
+            isOnline={mapState.isOnline}
+            providerName={mapState.providerName}
+            isAutoSwitch={mapState.isAutoSwitch}
+            onOpenRegionManager={() => setIsRegionModalOpen(true)}
+          />
+        </div>
+      )}
 
       {/* Bottom Overlay: Search & Route Controls */}
       <div className="absolute bottom-4 left-4 right-4 z-10 pointer-events-none flex justify-center">
@@ -136,6 +138,7 @@ export const HybridMapContainer: React.FC<HybridMapContainerProps> = ({
           onToggleAutoSwitch={handleToggleAutoSwitch}
           onToggleTraffic={handleToggleTraffic}
           userLocation={mapState.userLocation}
+          onOpenRegionManager={() => setIsRegionModalOpen(true)}
         />
       </div>
 

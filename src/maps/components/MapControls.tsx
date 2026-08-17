@@ -15,6 +15,7 @@ interface MapControlsProps {
   onToggleAutoSwitch: (enabled: boolean) => void;
   onToggleTraffic: (enabled: boolean) => void;
   userLocation: LatLng;
+  onOpenRegionManager?: () => void;
 }
 
 export const MapControls: React.FC<MapControlsProps> = ({
@@ -31,6 +32,7 @@ export const MapControls: React.FC<MapControlsProps> = ({
   onToggleAutoSwitch,
   onToggleTraffic,
   userLocation,
+  onOpenRegionManager,
 }) => {
   const [originText, setOriginText] = useState('Mi Ubicación GPS');
   const [originPos, setOriginPos] = useState<LatLng>(userLocation);
@@ -301,6 +303,18 @@ export const MapControls: React.FC<MapControlsProps> = ({
           <span className="material-symbols-outlined text-base">alt_route</span>
           <span>Trazar Ruta</span>
         </button>
+
+        {/* Offline Region Manager Download */}
+        {onOpenRegionManager && (
+          <button
+            onClick={onOpenRegionManager}
+            className="bg-[#09152b]/95 hover:bg-[#09152b] text-white border border-white/10 rounded-2xl p-2.5 shadow-xl transition flex items-center gap-1 text-xs font-medium active:scale-95 cursor-pointer"
+            title="Descargar Mapas Offline"
+          >
+            <span className="material-symbols-outlined text-emerald-400 text-base">download</span>
+            <span className="hidden sm:inline">Mapas</span>
+          </button>
+        )}
 
         {/* Toggle Traffic (Online Mode) */}
         {activeProvider === 'google' && (
