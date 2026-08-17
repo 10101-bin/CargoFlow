@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, MapPin, History, Menu, Truck, Star, Info, X, Navigation, RefreshCw, CheckCircle2, Navigation2, Phone, Flag, PackageCheck, MapPinned } from 'lucide-react';
+import { Search, MapPin, History, Menu, Truck, Star, Info, X, Navigation, RefreshCw, CheckCircle2, Navigation2, Phone, Flag, PackageCheck, MapPinned, Compass, Map, Crosshair } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Trip, UserProfile } from '../types';
 import { HybridMapContainer } from '../maps/components/HybridMapContainer';
+import { COLOMBIA_LOGISTICS_PLACES } from '../maps/services/search/SearchCatalog';
 
 interface HomeProps {
   user: UserProfile;
@@ -87,6 +88,28 @@ export default function Home({
   // Form State for creating a custom shipment
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
+  const [isLocatingGps, setIsLocatingGps] = useState(false);
+  const [showOriginCatalog, setShowOriginCatalog] = useState(false);
+  const [showDestCatalog, setShowDestCatalog] = useState(false);
+
+  const handleGetGpsOrigin = () => {
+    if ('geolocation' in navigator) {
+      setIsLocatingGps(true);
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setIsLocatingGps(false);
+          setOrigin(`Ubicación GPS (${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)})`);
+        },
+        () => {
+          setIsLocatingGps(false);
+          setOrigin('Mi Ubicación GPS (Medellín, Antioquia)');
+        },
+        { timeout: 5000 }
+      );
+    } else {
+      setOrigin('Mi Ubicación GPS (Medellín, Antioquia)');
+    }
+  };
   const [cargoType, setCargoType] = useState('General');
   const [tag, setTag] = useState<string>('');
   const [vehicle, setVehicle] = useState('Camión Sencillo');
@@ -739,60 +762,212 @@ export default function Home({
       <AnimatePresence>
         {showShipmentModal && (
           <div 
-            className="fixed inset-0 z-50 backdrop-blur-sm bg-black/40 flex items-center justify-center p-4"
+            className="fixed inset-0 z-[300] backdrop-blur-md bg-black/60 flex items-start sm:items-center justify-center p-4 pt-16 sm:pt-4 overflow-y-auto"
             onClick={() => setShowShipmentModal(false)}
           >
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl overflow-y-auto max-h-[85vh] no-scrollbar border border-surface-container"
+              className="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl overflow-y-auto max-h-[85vh] no-scrollbar border border-slate-200 my-auto relative z-10"
             >
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-black text-on-surface">
-                  {editingTrip ? 'Editar Flete' : 'Nuevo Despacho'}
-                </h3>
+              <div className="flex justify-between items-center mb-5 pb-3 border-b border-slate-100">
+                <div>
+                  <h3 className="text-lg font-black text-slate-900">
+                    {editingTrip ? 'Editar Flete' : 'Nuevo Despacho'}
+                  </h3>
+                  <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Publicar solicitud de carga</p>
+                </div>
                 <button
+                  type="button"
                   onClick={() => setShowShipmentModal(false)}
-                  className="p-1 hover:bg-surface-container rounded-full text-on-surface-variant"
+                  className="p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-colors cursor-pointer"
                 >
                   <X size={20} />
                 </button>
               </div>
 
-              <form onSubmit={handleCreateShipmentSubmit} className="flex flex-col gap-4">
-                {/* Origen */}
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-bold text-outline uppercase tracking-wider">Ciudad de Origen</label>
+              <form onSubmit={handleCreateShipmentSubmit} className="flex flex-col gap-5">
+                {/* ── ORIGEN ────────────────────────────────────────── */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <MapPin size={14} className="text-emerald-600" />
+                      Origen de la Carga
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleGetGpsOrigin}
+                      disabled={isLocatingGps}
+                      className="text-[11px] font-extrabold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 px-2.5 py-1 rounded-full flex items-center gap-1 transition-all cursor-pointer active:scale-95"
+                    >
+                      <Crosshair size={12} className={isLocatingGps ? 'animate-spin' : ''} />
+                      <span>{isLocatingGps ? 'Ubicando...' : '🎯 Usar GPS'}</span>
+                    </button>
+                  </div>
+
                   <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-outline" size={16} />
                     <input
                       type="text"
-                      placeholder="Ej. Bogotá, Cundinamarca"
+                      placeholder="Escribe o selecciona dirección de origen"
                       value={origin}
                       onChange={(e) => setOrigin(e.target.value)}
-                      className="w-full h-11 pl-10 pr-4 bg-surface rounded-xl border border-outline-variant text-sm focus:outline-none focus:border-primary-container font-semibold"
+                      className="w-full h-12 pl-4 pr-10 bg-slate-50 rounded-2xl border border-slate-200 text-sm focus:outline-none focus:border-emerald-500 focus:bg-white font-bold text-slate-800 transition-all shadow-xs"
                       required
                     />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowOriginCatalog(!showOriginCatalog);
+                        setShowDestCatalog(false);
+                      }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-emerald-600 transition-colors cursor-pointer"
+                      title="Ver puntos logísticos de origen"
+                    >
+                      <Map size={18} />
+                    </button>
                   </div>
+
+                  {/* Quick Chips for Origen */}
+                  <div className="flex gap-1.5 flex-wrap">
+                    {['Medellín, ANT', 'Bogotá, D.C.', 'Rionegro, ANT', 'Itagüí, ANT'].map((loc) => (
+                      <button
+                        key={`orig-${loc}`}
+                        type="button"
+                        onClick={() => setOrigin(loc)}
+                        className={`text-[10px] font-bold px-2.5 py-1 rounded-full border transition-all cursor-pointer ${
+                          origin === loc 
+                            ? 'bg-emerald-600 text-white border-emerald-600' 
+                            : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
+                        }`}
+                      >
+                        📍 {loc}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Origin Logistics Catalog Dropdown */}
+                  <AnimatePresence>
+                    {showOriginCatalog && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="bg-slate-900 text-white rounded-2xl p-3 border border-slate-700 shadow-xl overflow-hidden flex flex-col gap-1 mt-1"
+                      >
+                        <p className="text-[10px] font-black uppercase text-emerald-400 tracking-wider mb-1">Puntos Logísticos de Carga (Catálogo)</p>
+                        <div className="max-h-36 overflow-y-auto flex flex-col gap-1 pr-1">
+                          {COLOMBIA_LOGISTICS_PLACES.map((place) => (
+                            <button
+                              key={`orig-cat-${place.id}`}
+                              type="button"
+                              onClick={() => {
+                                setOrigin(place.title);
+                                setShowOriginCatalog(false);
+                              }}
+                              className="w-full text-left p-2 hover:bg-slate-800 rounded-xl transition-colors flex flex-col cursor-pointer"
+                            >
+                              <span className="text-xs font-bold text-white">{place.title}</span>
+                              <span className="text-[10px] text-slate-400 truncate">{place.address}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
 
-                {/* Destino */}
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-bold text-outline uppercase tracking-wider">Ciudad de Destino</label>
+                {/* ── DESTINO ────────────────────────────────────────── */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <MapPin size={14} className="text-blue-600" />
+                      Destino de la Carga
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowDestCatalog(!showDestCatalog);
+                        setShowOriginCatalog(false);
+                      }}
+                      className="text-[11px] font-extrabold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 px-2.5 py-1 rounded-full flex items-center gap-1 transition-all cursor-pointer active:scale-95"
+                    >
+                      <Map size={12} />
+                      <span>🗺️ Puntos Entrega</span>
+                    </button>
+                  </div>
+
                   <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-primary-container" size={16} />
                     <input
                       type="text"
-                      placeholder="Ej. Medellín, Antioquia"
+                      placeholder="Escribe o selecciona dirección de destino"
                       value={destination}
                       onChange={(e) => setDestination(e.target.value)}
-                      className="w-full h-11 pl-10 pr-4 bg-surface rounded-xl border border-outline-variant text-sm focus:outline-none focus:border-primary-container font-semibold"
+                      className="w-full h-12 pl-4 pr-10 bg-slate-50 rounded-2xl border border-slate-200 text-sm focus:outline-none focus:border-blue-500 focus:bg-white font-bold text-slate-800 transition-all shadow-xs"
                       required
                     />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowDestCatalog(!showDestCatalog);
+                        setShowOriginCatalog(false);
+                      }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
+                      title="Ver puntos logísticos de destino"
+                    >
+                      <Map size={18} />
+                    </button>
                   </div>
+
+                  {/* Quick Chips for Destino */}
+                  <div className="flex gap-1.5 flex-wrap">
+                    {['Medellín, ANT', 'Bogotá, D.C.', 'Cali, VAL', 'Barranquilla, ATL', 'Bucaramanga, SAN'].map((loc) => (
+                      <button
+                        key={`dest-${loc}`}
+                        type="button"
+                        onClick={() => setDestination(loc)}
+                        className={`text-[10px] font-bold px-2.5 py-1 rounded-full border transition-all cursor-pointer ${
+                          destination === loc 
+                            ? 'bg-blue-600 text-white border-blue-600' 
+                            : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
+                        }`}
+                      >
+                        🏁 {loc}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Destination Logistics Catalog Dropdown */}
+                  <AnimatePresence>
+                    {showDestCatalog && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="bg-slate-900 text-white rounded-2xl p-3 border border-slate-700 shadow-xl overflow-hidden flex flex-col gap-1 mt-1"
+                      >
+                        <p className="text-[10px] font-black uppercase text-blue-400 tracking-wider mb-1">Puntos Logísticos de Entrega (Catálogo)</p>
+                        <div className="max-h-36 overflow-y-auto flex flex-col gap-1 pr-1">
+                          {COLOMBIA_LOGISTICS_PLACES.map((place) => (
+                            <button
+                              key={`dest-cat-${place.id}`}
+                              type="button"
+                              onClick={() => {
+                                setDestination(place.title);
+                                setShowDestCatalog(false);
+                              }}
+                              className="w-full text-left p-2 hover:bg-slate-800 rounded-xl transition-colors flex flex-col cursor-pointer"
+                            >
+                              <span className="text-xs font-bold text-white">{place.title}</span>
+                              <span className="text-[10px] text-slate-400 truncate">{place.address}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
 
                 {/* Tipo de Carga */}
