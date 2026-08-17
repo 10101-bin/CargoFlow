@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Truck, MapPin, Eye, MessageSquare, User } from 'lucide-react';
 import { motion } from 'motion/react';
 import { UserProfile, Trip } from '../types';
+import { ConfirmModal } from './ConfirmModal';
 
 interface ActivityProps {
   user: UserProfile;
@@ -17,6 +18,21 @@ interface ActivityProps {
 
 export default function Activity({ user, trips, usersList = [], onNavigateToChat, onCancelTrip, onEditTrip, onResolveCounterOffer, onCompleteTrip, onOpenRating }: ActivityProps) {
   const [filter, setFilter] = useState<'activos' | 'historial'>('activos');
+
+  // Custom confirm modal state
+  const [confirmModal, setConfirmModal] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+    confirmLabel: string;
+    variant: 'danger' | 'success' | 'warning' | 'info';
+    onConfirm: () => void;
+  }>({
+    open: false, title: '', message: '', confirmLabel: '', variant: 'info',
+    onConfirm: () => {},
+  });
+
+  const closeConfirm = () => setConfirmModal(m => ({ ...m, open: false }));
 
   // Filter trips based on selection and user role permissions
   const filteredTrips = trips.filter((trip) => {
@@ -54,7 +70,7 @@ export default function Activity({ user, trips, usersList = [], onNavigateToChat
     );
   };
 
-  return (
+  return (<>
     <div className="bg-background min-h-screen pt-20">
       {/* Top App Bar */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm flex items-center justify-between px-6 h-16">
@@ -301,9 +317,14 @@ export default function Activity({ user, trips, usersList = [], onNavigateToChat
                               )}
                               <button
                                 onClick={() => {
-                                  if (window.confirm('¿Estás seguro de que deseas cancelar esta solicitud?')) {
-                                    onCancelTrip(trip.id);
-                                  }
+                                  setConfirmModal({
+                                    open: true,
+                                    title: 'Cancelar solicitud',
+                                    message: '¿Estás seguro de que deseas cancelar esta solicitud? Esta acción no se puede deshacer.',
+                                    confirmLabel: 'Sí, cancelar',
+                                    variant: 'danger',
+                                    onConfirm: () => { onCancelTrip(trip.id); closeConfirm(); },
+                                  });
                                 }}
                                 className="px-3 py-1.5 rounded-lg text-xs font-bold text-error bg-red-50 hover:bg-red-100 border border-red-200 transition-colors"
                               >
@@ -323,9 +344,14 @@ export default function Activity({ user, trips, usersList = [], onNavigateToChat
                                 {onCompleteTrip && (
                                   <button
                                     onClick={() => {
-                                      if (window.confirm('¿Deseas dar por finalizado este servicio de flete?')) {
-                                        onCompleteTrip(trip);
-                                      }
+                                      setConfirmModal({
+                                        open: true,
+                                        title: 'Finalizar servicio',
+                                        message: '¿Deseas dar por finalizado este servicio de flete? El cliente será notificado.',
+                                        confirmLabel: '✓ Finalizar',
+                                        variant: 'success',
+                                        onConfirm: () => { onCompleteTrip!(trip); closeConfirm(); },
+                                      });
                                     }}
                                     className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-extrabold text-xs shadow-md transition-all active:scale-95 flex items-center gap-1 cursor-pointer"
                                   >
@@ -393,5 +419,15 @@ export default function Activity({ user, trips, usersList = [], onNavigateToChat
         </div>
       </main>
     </div>
-  );
+
+    <ConfirmModal
+      isOpen={confirmModal.open}
+      title={confirmModal.title}
+      message={confirmModal.message}
+      confirmLabel={confirmModal.confirmLabel}
+      variant={confirmModal.variant}
+      onConfirm={confirmModal.onConfirm}
+      onCancel={closeConfirm}
+    />
+  </>);
 }

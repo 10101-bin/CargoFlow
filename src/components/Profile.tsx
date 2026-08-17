@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { UserProfile, Vehicle, Trip } from '../types';
+import { ConfirmModal } from './ConfirmModal';
 
 interface ProfileProps {
   user: UserProfile;
@@ -326,7 +327,21 @@ export default function Profile({ user, trips, onUpdateProfile, onDeposit, onLog
     setShowAddVehicleModal(false);
   };
 
-  return (
+  // Custom confirm modal state
+  const [confirmModal, setConfirmModal] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+    confirmLabel: string;
+    variant: 'danger' | 'success' | 'warning' | 'info';
+    onConfirm: () => void;
+  }>({
+    open: false, title: '', message: '', confirmLabel: '', variant: 'info',
+    onConfirm: () => {},
+  });
+  const closeConfirm = () => setConfirmModal(m => ({ ...m, open: false }));
+
+  return (<>
     <div className="bg-background min-h-screen pt-20 font-sans antialiased">
       <main className="px-6 max-w-lg mx-auto flex flex-col gap-6">
         
@@ -596,15 +611,23 @@ export default function Profile({ user, trips, onUpdateProfile, onDeposit, onLog
 
                           <button
                             onClick={() => {
-                              if (confirm(`¿Estás seguro de eliminar el vehículo ${vh.plate}?`)) {
-                                const remaining = user.vehicles?.filter(v => v.id !== vh.id) || [];
-                                const wasDefault = user.plateNumber === vh.plate;
-                                onUpdateProfile({
-                                  vehicles: remaining,
-                                  plateNumber: wasDefault ? (remaining[0]?.plate || '') : user.plateNumber,
-                                  vehicleType: wasDefault ? (remaining[0]?.type || '') : user.vehicleType
-                                });
-                              }
+                              setConfirmModal({
+                                open: true,
+                                title: 'Eliminar vehículo',
+                                message: `¿Estás seguro de eliminar el vehículo ${vh.plate}? Esta acción no se puede deshacer.`,
+                                confirmLabel: 'Sí, eliminar',
+                                variant: 'danger',
+                                onConfirm: () => {
+                                  const remaining = user.vehicles?.filter(v => v.id !== vh.id) || [];
+                                  const wasDefault = user.plateNumber === vh.plate;
+                                  onUpdateProfile({
+                                    vehicles: remaining,
+                                    plateNumber: wasDefault ? (remaining[0]?.plate || '') : user.plateNumber,
+                                    vehicleType: wasDefault ? (remaining[0]?.type || '') : user.vehicleType
+                                  });
+                                  closeConfirm();
+                                },
+                              });
                             }}
                             className="p-1 hover:bg-red-50 hover:text-red-600 rounded-lg text-slate-400 transition-colors cursor-pointer"
                           >
@@ -1248,5 +1271,15 @@ export default function Profile({ user, trips, onUpdateProfile, onDeposit, onLog
         )}
       </AnimatePresence>
     </div>
-  );
+
+    <ConfirmModal
+      isOpen={confirmModal.open}
+      title={confirmModal.title}
+      message={confirmModal.message}
+      confirmLabel={confirmModal.confirmLabel}
+      variant={confirmModal.variant}
+      onConfirm={confirmModal.onConfirm}
+      onCancel={closeConfirm}
+    />
+  </>);
 }
