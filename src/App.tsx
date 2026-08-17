@@ -66,20 +66,39 @@ export default function App() {
   const [splashSound, setSplashSound] = useState<string | undefined>(getSysTone('login'));
 
   // Selected role
-  const [selectedRole, setSelectedRole] = useState<UserRole>('conductor');
-  
-  // Current user state
-  const [user, setUser] = useState<UserProfile>({
-    name: 'Carlos Rodríguez',
-    email: 'carlos.rod@cargoflow.co',
-    phone: '+57 311 456 7890',
-    role: 'conductor',
-    isVerified: true,
-    rating: 4.9,
-    balance: 1250000,
-    plateNumber: 'WYZ-789',
-    vehicleType: 'Furgón Mediano',
+  const [selectedRole, setSelectedRole] = useState<UserRole>(() => {
+    return (localStorage.getItem('cf_last_role') as UserRole) || 'conductor';
   });
+  
+  // Current user state (persisted in localStorage to preserve email & role on page refresh)
+  const [user, setUser] = useState<UserProfile>(() => {
+    const saved = localStorage.getItem('cf_user_profile');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.email) return parsed;
+      } catch (_) {}
+    }
+    return {
+      name: 'Carlos Rodríguez',
+      email: 'carlos.rod@cargoflow.co',
+      phone: '+57 311 456 7890',
+      role: 'conductor',
+      isVerified: true,
+      rating: 4.9,
+      balance: 1250000,
+      plateNumber: 'WYZ-789',
+      vehicleType: 'Furgón Mediano',
+    };
+  });
+
+  // Automatically sync user profile to localStorage whenever user changes
+  useEffect(() => {
+    if (user && user.email) {
+      localStorage.setItem('cf_user_profile', JSON.stringify(user));
+      localStorage.setItem('cf_last_role', user.role);
+    }
+  }, [user]);
 
   // Database of shipments (trips)
   const [trips, setTrips] = useState<Trip[]>(INITIAL_TRIPS);
@@ -1061,6 +1080,7 @@ export default function App() {
         } catch (e) {
           console.warn('Logout error:', e);
         }
+        localStorage.removeItem('cf_user_profile');
         setView('login');
       }
     );
@@ -1140,7 +1160,7 @@ export default function App() {
               user={user} 
               trips={trips}
               usersList={usersList}
-              pendingTrip={trips.find(t => t.status === 'PENDIENTE')}
+              pendingTrip={trips.find(t => t.status === 'PENDIENTE' && t.clienteId !== user.email)}
               editingTrip={editingTrip}
               onCloseEditing={() => setEditingTrip(null)}
               onCreateShipment={handleCreateShipment} 
