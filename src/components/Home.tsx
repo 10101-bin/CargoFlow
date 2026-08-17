@@ -686,9 +686,7 @@ export default function Home({
         ) : (
           /* CLIENT BOTTOM CARD: RASTREO DE ENVÍO EN CURSO */
           (() => {
-            const clientActiveTrip = (trips || []).find(t => t.clienteId === user.email && (t.status === 'EN CAMINO' || t.status === 'PENDIENTE')) 
-              || (trips || []).find(t => t.clienteId === user.email) 
-              || (trips || [])[0];
+            const clientActiveTrip = (trips || []).find(t => t.clienteId === user.email && (t.status === 'EN CAMINO' || t.status === 'PENDIENTE'));
 
             if (!clientActiveTrip) {
               return null;
