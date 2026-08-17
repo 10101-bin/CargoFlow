@@ -39,7 +39,8 @@ export default function Activity({ user, trips, usersList = [], onNavigateToChat
     // 1. Role-based visibility check
     if (user.role === 'conductor') {
       const isAssignedToMe = trip.conductorId === user.email;
-      const isPending = trip.status === 'PENDIENTE';
+      const isAvailable = user.isAvailable ?? true;
+      const isPending = trip.status === 'PENDIENTE' && isAvailable && trip.clienteId !== user.email;
       if (!isPending && !isAssignedToMe) return false;
     }
     // Admin sees everything, Client only gets their own trips from Firestore anyway.

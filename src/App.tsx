@@ -353,15 +353,21 @@ export default function App() {
             const data = change.doc.data();
             if (change.type === 'added' && !data.read) {
               if (!isInitial) {
-                playNotificationSound();
-                setActiveToast({
-                  id: change.doc.id,
-                  title: data.title || 'Nueva Notificación',
-                  message: data.body || data.message || '',
-                  type: data.type || (data.tag?.includes('chat') || data.title?.includes('Mensaje') ? 'chat' : 'info'),
-                  tag: data.tag || undefined,
-                  tripId: data.tag?.startsWith('chat-') ? data.tag.replace('chat-', '') : undefined,
-                });
+                const isFreightOffer = data.userId === 'all_conductors' || data.tag?.startsWith('trip-new-') || data.title?.includes('Flete');
+                const isConductorInactive = user.role === 'conductor' && user.isAvailable === false;
+
+                // Silence new freight offer notifications if conductor is set to Inactive / No Disponible
+                if (!isFreightOffer || !isConductorInactive) {
+                  playNotificationSound();
+                  setActiveToast({
+                    id: change.doc.id,
+                    title: data.title || 'Nueva Notificación',
+                    message: data.body || data.message || '',
+                    type: data.type || (data.tag?.includes('chat') || data.title?.includes('Mensaje') ? 'chat' : 'info'),
+                    tag: data.tag || undefined,
+                    tripId: data.tag?.startsWith('chat-') ? data.tag.replace('chat-', '') : undefined,
+                  });
+                }
               }
             }
           });
@@ -1160,7 +1166,11 @@ export default function App() {
               user={user} 
               trips={trips}
               usersList={usersList}
-              pendingTrip={trips.find(t => t.status === 'PENDIENTE' && t.clienteId !== user.email)}
+              pendingTrip={
+                (user.role === 'conductor' && user.isAvailable === false)
+                  ? undefined
+                  : trips.find(t => t.status === 'PENDIENTE' && t.clienteId !== user.email)
+              }
               editingTrip={editingTrip}
               onCloseEditing={() => setEditingTrip(null)}
               onCreateShipment={handleCreateShipment} 
