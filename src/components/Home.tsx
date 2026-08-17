@@ -477,38 +477,22 @@ export default function Home({
       {/* Floating Header Card - Custom for Role */}
       <div className="absolute top-20 left-4 right-4 z-20">
         {user.role === 'conductor' ? (
-          /* DRIVER TOP CARD */
-          <div className="relative w-full bg-gradient-to-br from-[#09152b] via-[#0b224d] to-[#041029] text-white rounded-2xl p-4 shadow-[0px_10px_35px_rgba(11,34,77,0.5)] border border-blue-500/20 flex flex-col gap-3 overflow-hidden">
-            {/* Scanlines overlay — Login style */}
-            <div className="absolute inset-0 pointer-events-none rounded-2xl opacity-10 bg-[linear-gradient(to_bottom,transparent_50%,rgba(0,0,0,0.8)_50%)] bg-[length:100%_4px]" />
-
-            <div className="relative flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className={`w-2.5 h-2.5 rounded-full ${isAvailable ? 'bg-emerald-400 animate-pulse' : 'bg-slate-400'}`} />
-                <span className={`text-xs font-black tracking-widest uppercase ${isAvailable ? 'text-emerald-400' : 'text-slate-400'}`}>
-                  {isAvailable ? 'MODO CONDUCTOR • DISPONIBLE' : 'MODO CONDUCTOR • INACTIVO'}
-                </span>
-              </div>
-              <span className="text-[11px] font-extrabold bg-emerald-950 text-emerald-400 border border-emerald-500/40 px-2 py-0.5 rounded-full">
-                Placa: {activePlate}
+          /* DRIVER TOP CARD: SLEEK FLOATING BAR (UBER / RAPPI STYLE) */
+          <div className="w-full bg-[#09152b]/90 backdrop-blur-md text-white rounded-full p-2 px-3 shadow-[0px_10px_30px_rgba(0,0,0,0.3)] border border-slate-700/60 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${isAvailable ? 'bg-emerald-400 animate-pulse' : 'bg-slate-400'}`} />
+              <span className={`text-[11px] font-black uppercase truncate ${isAvailable ? 'text-emerald-400' : 'text-slate-400'}`}>
+                {isAvailable ? 'CONECTADO' : 'INACTIVO'} • <span className="text-white font-extrabold">{activePlate}</span>
               </span>
             </div>
 
-            <div className="relative grid grid-cols-3 gap-2 bg-white/5 p-2 rounded-xl border border-white/10 text-center">
-              <div>
-                <span className="text-[10px] text-slate-400 font-bold block uppercase">Ganancias Hoy</span>
-                <span className="text-xs font-black text-emerald-400">
-                  {todayEarnings > 0 ? '$' + todayEarnings.toLocaleString('es-CO') : '$0'}
-                </span>
-              </div>
-              <div className="border-x border-white/10">
-                <span className="text-[10px] text-slate-400 font-bold block uppercase">Calificación</span>
-                <span className="text-xs font-black text-amber-400">★ {driverRating}</span>
-              </div>
-              <div>
-                <span className="text-[10px] text-slate-400 font-bold block uppercase">Entregas</span>
-                <span className="text-xs font-black text-blue-400">{totalDriverCompleted} Viajes</span>
-              </div>
+            <div className="flex items-center gap-2 flex-shrink-0 text-xs font-black">
+              <span className="text-emerald-400 bg-emerald-950/80 border border-emerald-500/30 px-2.5 py-1 rounded-full text-[11px]">
+                {todayEarnings > 0 ? '$' + todayEarnings.toLocaleString('es-CO') : '$0'}
+              </span>
+              <span className="text-amber-400 bg-amber-950/80 border border-amber-500/30 px-2 py-1 rounded-full text-[11px] flex items-center gap-0.5">
+                ★ {driverRating}
+              </span>
             </div>
           </div>
         ) : (

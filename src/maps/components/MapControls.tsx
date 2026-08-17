@@ -40,6 +40,7 @@ export const MapControls: React.FC<MapControlsProps> = ({
   const [activeInput, setActiveInput] = useState<'origin' | 'dest' | null>(null);
   const [searchResults, setSearchResults] = useState<PlaceSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [trafficEnabled, setTrafficEnabled] = useState(false);
   const [showSteps, setShowSteps] = useState(false);
 
@@ -105,9 +106,22 @@ export const MapControls: React.FC<MapControlsProps> = ({
   };
 
   return (
-    <div className="flex flex-col gap-3 w-full max-w-md pointer-events-auto">
-      {/* Route & Search Panel */}
-      <div className="bg-[#09152b]/95 border border-white/10 rounded-3xl shadow-2xl p-4 text-white flex flex-col gap-3 backdrop-blur-md">
+    <div className="flex flex-col gap-2 w-full max-w-md pointer-events-auto">
+      {/* Route & Search Panel (Collapsible) */}
+      {isExpanded && (
+        <div className="bg-[#09152b]/95 border border-white/10 rounded-3xl shadow-2xl p-4 text-white flex flex-col gap-3 backdrop-blur-md animate-fade-in-up">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-black text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-sm">alt_route</span>
+              Simular / Trazar Ruta
+            </span>
+            <button
+              onClick={() => setIsExpanded(false)}
+              className="p-1 text-slate-400 hover:text-white hover:bg-white/10 rounded-full transition"
+            >
+              <span className="material-symbols-outlined text-base">close</span>
+            </button>
+          </div>
         {/* Origin Field */}
         <div className="relative">
           <div className="flex items-center bg-white/5 border border-white/10 rounded-2xl px-3 py-2 text-xs">
@@ -182,13 +196,14 @@ export const MapControls: React.FC<MapControlsProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={handleTraceRoute}
-            className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs py-2.5 px-4 rounded-2xl shadow-lg transition flex items-center justify-center gap-2 active:scale-95"
+            className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs py-2.5 px-4 rounded-2xl shadow-lg transition flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
           >
             <span className="material-symbols-outlined text-lg">alt_route</span>
             <span>Trazar y Calcular Ruta</span>
           </button>
         </div>
       </div>
+      )}
 
       {/* Active Route Details Card & Turn-by-Turn Steps */}
       {activeRoute && (
@@ -266,11 +281,25 @@ export const MapControls: React.FC<MapControlsProps> = ({
         {/* Recenter GPS Location Button */}
         <button
           onClick={onCenterUserLocation}
-          className="bg-[#09152b]/95 hover:bg-[#09152b] text-white border border-white/10 rounded-2xl p-2.5 shadow-xl transition flex items-center gap-1.5 text-xs font-medium active:scale-95"
+          className="bg-[#09152b]/95 hover:bg-[#09152b] text-white border border-white/10 rounded-2xl p-2.5 shadow-xl transition flex items-center gap-1.5 text-xs font-medium active:scale-95 cursor-pointer"
           title="Centrar en mi ubicación GPS"
         >
           <span className="material-symbols-outlined text-emerald-400 text-lg">my_location</span>
           <span className="hidden sm:inline">Mi Posición</span>
+        </button>
+
+        {/* Toggle Route Simulator */}
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className={`rounded-2xl p-2.5 shadow-xl border text-xs font-bold transition flex items-center gap-1.5 active:scale-95 cursor-pointer ${
+            isExpanded 
+              ? 'bg-emerald-500 text-slate-950 border-emerald-400' 
+              : 'bg-[#09152b]/95 text-slate-200 border-white/10 hover:text-white'
+          }`}
+          title="Trazar y Calcular Ruta"
+        >
+          <span className="material-symbols-outlined text-base">alt_route</span>
+          <span>Trazar Ruta</span>
         </button>
 
         {/* Toggle Traffic (Online Mode) */}
