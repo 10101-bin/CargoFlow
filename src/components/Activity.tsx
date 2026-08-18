@@ -53,13 +53,18 @@ export default function Activity({
   // Filter trips based on selection and user role permissions
   const filteredTrips = trips.filter((trip) => {
     // 1. Role-based visibility check
-    if (user.role === 'conductor') {
+    if (user.role === 'cliente') {
+      // A client ONLY sees trips they created
+      if (trip.clienteId !== user.email) return false;
+    } else if (user.role === 'conductor') {
       const isAssignedToMe = trip.conductorId === user.email;
       const isAvailable = user.isAvailable ?? true;
+      // Can see PENDIENTE trips (to potentially accept), but NOT other clients' trips
       const isPending = trip.status === 'PENDIENTE' && isAvailable && trip.clienteId !== user.email;
+      // Can see trips that are EN CAMINO or further ONLY if assigned to them
       if (!isPending && !isAssignedToMe) return false;
     }
-    // Admin sees everything, Client only gets their own trips from Firestore anyway.
+    // Admin sees everything
 
     // 2. Tab filter check
     if (filter === 'activos') {
