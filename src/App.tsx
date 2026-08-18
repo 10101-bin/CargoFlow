@@ -123,6 +123,15 @@ export default function App() {
   const [ratingTrip, setRatingTrip] = useState<Trip | null>(null);
   const [usersList, setUsersList] = useState<UserProfile[]>([]);
 
+  // Auto-dismiss in-app activeToast banner after 5 seconds
+  useEffect(() => {
+    if (!activeToast) return;
+    const timer = setTimeout(() => {
+      setActiveToast(null);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [activeToast]);
+
   // Listen to all users for profile sync (photos, names, ratings)
   useEffect(() => {
     let unsubscribe = () => {};
@@ -290,10 +299,11 @@ export default function App() {
       const { sendDbNotification } = await import('./services/notificationService');
       const targetEmail = user.email === trip.clienteId ? trip.conductorId : trip.clienteId;
       if (targetEmail) {
+        const cleanTripId = trip.id.startsWith('#') ? trip.id : `#${trip.id}`;
         sendDbNotification(
           targetEmail,
           '🎉 Servicio Finalizado',
-          `El flete #${trip.id} ha sido completado. ¡Por favor califica la experiencia!`,
+          `El flete ${cleanTripId} ha sido completado. ¡Por favor califica la experiencia!`,
           `trip-completed-${trip.id}`,
           'info'
         );
@@ -1402,31 +1412,40 @@ export default function App() {
               }
               setActiveToast(null);
             }}
-            className="fixed top-16 left-4 right-4 z-50 bg-slate-900/95 text-white p-3.5 rounded-2xl shadow-2xl backdrop-blur-md border border-slate-700 flex items-center justify-between cursor-pointer active:scale-98 transition-all"
+            className="fixed top-18 left-4 right-4 z-50 bg-white/95 text-slate-900 p-3.5 rounded-2xl shadow-xl backdrop-blur-md border border-slate-200/90 flex flex-col gap-2 cursor-pointer active:scale-98 transition-all overflow-hidden"
           >
-            <div className="flex items-center gap-3 min-w-0 flex-1">
-              <div className="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl flex-shrink-0">
-                💬
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg flex-shrink-0 border border-emerald-100">
+                  {activeToast.title.includes('Finalizado') ? '🎉' : activeToast.title.includes('Mensaje') ? '💬' : '📦'}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-black text-slate-900 truncate">{activeToast.title}</p>
+                  <p className="text-xs font-semibold text-slate-600 truncate">{activeToast.message}</p>
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-black text-emerald-400 truncate">{activeToast.title}</p>
-                <p className="text-xs font-bold text-slate-100 truncate">{activeToast.message}</p>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <span className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] px-3 py-1.5 rounded-xl shadow-xs transition-colors">
+                  Responder
+                </span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveToast(null);
+                  }}
+                  className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                >
+                  ✕
+                </button>
               </div>
             </div>
-            <div className="flex items-center gap-2 ml-2 flex-shrink-0">
-              <span className="bg-emerald-500 text-slate-950 font-extrabold text-[11px] px-3 py-1.5 rounded-xl shadow-xs">
-                Responder
-              </span>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setActiveToast(null);
-                }}
-                className="text-slate-400 hover:text-white p-1"
-              >
-                ✕
-              </button>
-            </div>
+            {/* Auto-dismiss countdown bar */}
+            <motion.div
+              initial={{ scaleX: 1 }}
+              animate={{ scaleX: 0 }}
+              transition={{ duration: 5, ease: 'linear' }}
+              className="h-1 bg-emerald-500 rounded-full origin-left -mx-3.5 -mb-3.5 mt-1"
+            />
           </motion.div>
         )}
       </AnimatePresence>
