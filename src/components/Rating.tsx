@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Star, X, Check, HeartHandshake } from 'lucide-react';
 import { motion } from 'motion/react';
+import RatingBurstAnimation from './RatingBurstAnimation';
 
 interface RatingProps {
   driverName?: string;
@@ -16,6 +17,7 @@ export default function Rating({ driverName = 'Carlos Rodríguez', photoURL, tri
   const [tip, setTip] = useState<number | null>(null);
   const [tags, setTags] = useState<string[]>(['Puntual', 'Cuidado de la Carga']);
   const [submitted, setSubmitted] = useState(false);
+  const [showBurst, setShowBurst] = useState(false);
 
   const availableTags = ['Puntual', 'Cuidado de la Carga', 'Buena comunicación', 'Amable', 'Conducción segura'];
 
@@ -24,10 +26,13 @@ export default function Rating({ driverName = 'Carlos Rodríguez', photoURL, tri
   };
 
   const handleSubmit = () => {
+    setShowBurst(true); // fire animation
     setSubmitted(true);
-    setTimeout(() => {
-      onSubmit(rating, comment, tip || 0);
-    }, 1000);
+  };
+
+  const handleBurstComplete = () => {
+    setShowBurst(false);
+    onSubmit(rating, comment, tip || 0);
   };
 
   const renderAvatar = () => {
@@ -166,6 +171,7 @@ export default function Rating({ driverName = 'Carlos Rodríguez', photoURL, tri
           {submitted ? '¡Gracias por calificar!' : 'Enviar Calificación'}
         </button>
       </motion.div>
+      {showBurst && <RatingBurstAnimation stars={rating} onComplete={handleBurstComplete} />}
     </div>
   );
 }

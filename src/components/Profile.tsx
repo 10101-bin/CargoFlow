@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { 
   Edit2, Star, Plus, CreditCard, HelpCircle, Settings, LogOut, 
   Check, X, Truck, FileText, Camera, Calendar, AlertCircle, 
-  Trash2, CheckCircle2, Eye, Image, UserCheck 
+  Trash2, CheckCircle2, Eye, Image, UserCheck, Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { UserProfile, Vehicle, Trip } from '../types';
 import { ConfirmModal } from './ConfirmModal';
+import RatingBurstAnimation from './RatingBurstAnimation';
 
 interface ProfileProps {
   user: UserProfile;
@@ -340,6 +341,10 @@ export default function Profile({ user, trips, onUpdateProfile, onDeposit, onLog
     onConfirm: () => {},
   });
   const closeConfirm = () => setConfirmModal(m => ({ ...m, open: false }));
+
+  // Test Rating Animation State (for admin testing)
+  const [showTestRatingAnimation, setShowTestRatingAnimation] = useState(false);
+  const [testRatingStars, setTestRatingStars] = useState(5);
 
   return (<>
     <div className="bg-background min-h-screen pt-20 font-sans antialiased">
@@ -778,6 +783,36 @@ export default function Profile({ user, trips, onUpdateProfile, onDeposit, onLog
             </div>
           </button>
         </section>
+
+        {/* TEST RATING ANIMATION SECTION (Admin Only) */}
+        {user.role === 'admin' && (
+          <section className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl p-5 border-2 border-dashed border-purple-200 shadow-[0px_4px_20px_rgba(147,51,234,0.08)] flex flex-col gap-4">
+            <div className="flex items-center gap-2">
+              <Sparkles size={18} className="text-purple-600" />
+              <h3 className="text-xs font-black text-purple-900 uppercase tracking-wider">Prueba de Animaciones</h3>
+            </div>
+            
+            <div className="flex flex-col gap-3">
+              <p className="text-xs text-purple-700 font-semibold">Prueba la animación de ganancia de puntos:</p>
+              
+              <div className="flex gap-2 flex-wrap">
+                {[1, 2, 3, 4, 5].map((stars) => (
+                  <button
+                    key={stars}
+                    onClick={() => {
+                      setTestRatingStars(stars);
+                      setShowTestRatingAnimation(true);
+                    }}
+                    className="px-3 py-1.5 bg-white hover:bg-purple-600 text-purple-600 hover:text-white rounded-lg text-xs font-black transition-all active:scale-95 border border-purple-200 hover:border-purple-600 cursor-pointer flex items-center gap-1"
+                  >
+                    {stars}
+                    <Star size={12} className="text-amber-500" fill="currentColor" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
 
         <div className="h-1" aria-hidden="true" />
 
@@ -1281,5 +1316,13 @@ export default function Profile({ user, trips, onUpdateProfile, onDeposit, onLog
       onConfirm={confirmModal.onConfirm}
       onCancel={closeConfirm}
     />
+
+    {/* Test Rating Burst Animation (Admin Only) */}
+    {showTestRatingAnimation && (
+      <RatingBurstAnimation 
+        stars={testRatingStars} 
+        onComplete={() => setShowTestRatingAnimation(false)} 
+      />
+    )}
   </>);
 }
