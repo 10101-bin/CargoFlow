@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { UserProfile, Trip, ChatMessage, UserRole } from './types';
 import Login from './components/Login';
 import AdminLogin from './components/AdminLogin';
+import Landing from './components/Landing';
 import CompleteProfile from './components/CompleteProfile';
 import Home from './components/Home';
 import Activity from './components/Activity';
@@ -50,7 +51,7 @@ const INITIAL_CHAT_MESSAGES: ChatMessage[] = [
 ];
 
 export default function App() {
-  const [view, setView] = useState<'login' | 'admin_login' | 'complete_profile' | 'home' | 'activity' | 'chat' | 'dashboard' | 'profile' | 'settings'>(() => {
+  const [view, setView] = useState<'landing' | 'login' | 'admin_login' | 'complete_profile' | 'home' | 'activity' | 'chat' | 'dashboard' | 'profile' | 'settings'>(() => {
     if (typeof window !== 'undefined' && window.location.pathname.includes('/admin')) {
       return 'admin_login';
     }
@@ -59,7 +60,7 @@ export default function App() {
     if (savedUser && savedView && ['home', 'activity', 'chat', 'dashboard', 'profile', 'settings'].includes(savedView)) {
       return savedView as any;
     }
-    return savedUser ? 'home' : 'login';
+    return savedUser ? 'home' : 'landing';
   });
   
   // Splash Screen State
@@ -591,9 +592,9 @@ export default function App() {
               email: firebaseUser.email || firestoreProfile.email || prev.email,
               photoURL: firebaseUser.photoURL || firestoreProfile.photoURL || prev.photoURL,
             }));
-            // Only set view if currently on login / admin_login screens (don't interrupt active user navigation)
+            // Only set view if currently on login / admin_login / landing screens (don't interrupt active user navigation)
             setView(currentView => {
-              if (currentView === 'login' || currentView === 'admin_login') {
+              if (currentView === 'login' || currentView === 'admin_login' || currentView === 'landing') {
                 return (firestoreProfile.isComplete || activeRole === 'admin') 
                   ? (activeRole === 'admin' ? 'dashboard' : 'home') 
                   : 'complete_profile';
@@ -618,7 +619,7 @@ export default function App() {
                   photoURL: firebaseUser.photoURL || firestoreProfile.photoURL || prev.photoURL,
                 }));
                 setView(currentView => {
-                  if (currentView === 'login' || currentView === 'admin_login') {
+                  if (currentView === 'login' || currentView === 'admin_login' || currentView === 'landing') {
                     return (firestoreProfile.isComplete || activeRole === 'admin') 
                       ? (activeRole === 'admin' ? 'dashboard' : 'home') 
                       : 'complete_profile';
@@ -1253,11 +1254,24 @@ export default function App() {
               : 'min-h-screen'
           }`}
         >
+          {view === 'landing' && (
+            <Landing 
+              onGetStarted={(role) => {
+                if (role) {
+                  setSelectedRole(role);
+                  localStorage.setItem('cf_last_role', role);
+                }
+                setView('login');
+              }}
+            />
+          )}
+
           {view === 'login' && (
             <Login 
               currentRole={selectedRole}
               onLoginSuccess={handleLoginSuccess}
               onOpenAdminLogin={() => setView('admin_login')}
+              onBack={() => setView('landing')}
             />
           )}
 

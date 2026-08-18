@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Truck, User, Sun, Moon, Mail, Lock, Phone, UserCheck, ArrowRight, ChevronDown } from 'lucide-react';
+import { Truck, User, Sun, Moon, Mail, Lock, Phone, UserCheck, ArrowRight, ChevronDown, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { loginWithGoogle, registerWithEmail } from '../services/authService';
 import { UserRole } from '../types';
@@ -9,9 +9,10 @@ interface LoginProps {
   currentRole?: UserRole;
   onLoginSuccess: (profile: any) => void;
   onOpenAdminLogin?: () => void;
+  onBack?: () => void;
 }
 
-export default function Login({ currentRole = 'conductor', onLoginSuccess, onOpenAdminLogin }: LoginProps) {
+export default function Login({ currentRole = 'conductor', onLoginSuccess, onOpenAdminLogin, onBack }: LoginProps) {
   const [tapCount, setTapCount] = useState(0);
   const [selectedRole, setSelectedRole] = useState<UserRole>(currentRole);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
@@ -132,6 +133,21 @@ export default function Login({ currentRole = 'conductor', onLoginSuccess, onOpe
         >
           {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
         </button>
+        {/* Back Button */}
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            className={`absolute top-5 left-5 z-30 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 active:scale-90 shadow-md ${
+              isDarkMode 
+                ? 'bg-white/10 text-slate-300 border border-white/20 hover:bg-white/20 hover:text-white' 
+                : 'bg-slate-100 text-slate-700 border border-slate-300 hover:bg-slate-200 hover:text-slate-900'
+            }`}
+            title="Volver"
+          >
+            <ArrowLeft size={18} />
+          </button>
+        )}
         {/* Glow */}
         {isDarkMode && (
           <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-48 h-48 bg-emerald-500/15 blur-3xl rounded-full pointer-events-none" />
