@@ -16,5 +16,9 @@ service cloud.firestore {
     match /global_chat/{document=**} {
       allow read, write: if request.auth != null;
     }
+    match /admins/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
   }
 }

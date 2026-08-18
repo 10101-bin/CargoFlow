@@ -84,8 +84,7 @@ export const loginWithGoogle = async (role: UserRole = 'cliente'): Promise<UserP
         const data = snap.data() as UserProfile;
         const profile = {
           ...data,
-          // Always ensure the lfalzatel@gmail.com logic applies
-          role: cred.user.email === 'lfalzatel@gmail.com' ? 'admin' : data.role || role,
+          role: data.role || role,
         };
         // Update local cache
         localStorage.setItem(`cf_profile_${docId}`, JSON.stringify(profile));
@@ -100,7 +99,7 @@ export const loginWithGoogle = async (role: UserRole = 'cliente'): Promise<UserP
       name: cred.user.displayName || (role === 'cliente' ? 'Cliente Nuevo' : 'Conductor Nuevo'),
       email: cred.user.email || '',
       phone: cred.user.phoneNumber || '',
-      role: cred.user.email === 'lfalzatel@gmail.com' ? 'admin' : role,
+      role: role,
       isVerified: true,
       rating: 5.0,
       balance: 0,
@@ -114,7 +113,7 @@ export const loginWithGoogle = async (role: UserRole = 'cliente'): Promise<UserP
         return {
           ...cached,
           ...baseProfile,
-          role: cred.user.email === 'lfalzatel@gmail.com' ? 'admin' : role,
+          role: role,
         };
       } catch (e) {}
     }
@@ -124,7 +123,7 @@ export const loginWithGoogle = async (role: UserRole = 'cliente'): Promise<UserP
       name: cred.user.displayName || 'Usuario CargoFlow',
       email: cred.user.email || 'usuario.google@cargoflow.co',
       phone: cred.user.phoneNumber || '',
-      role: cred.user.email === 'lfalzatel@gmail.com' ? 'admin' : role,
+      role: role,
       isVerified: true,
       isComplete,
       rating: 5.0,

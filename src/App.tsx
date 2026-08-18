@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { UserProfile, Trip, ChatMessage, UserRole } from './types';
 import Login from './components/Login';
+import AdminLogin from './components/AdminLogin';
 import CompleteProfile from './components/CompleteProfile';
 import Home from './components/Home';
 import Activity from './components/Activity';
@@ -49,7 +50,17 @@ const INITIAL_CHAT_MESSAGES: ChatMessage[] = [
 ];
 
 export default function App() {
-  const [view, setView] = useState<'login' | 'complete_profile' | 'home' | 'activity' | 'chat' | 'dashboard' | 'profile' | 'settings'>('login');
+  const [view, setView] = useState<'login' | 'admin_login' | 'complete_profile' | 'home' | 'activity' | 'chat' | 'dashboard' | 'profile' | 'settings'>(() => {
+    if (typeof window !== 'undefined' && window.location.pathname.includes('/admin')) {
+      return 'admin_login';
+    }
+    const savedView = localStorage.getItem('cf_active_view');
+    const savedUser = localStorage.getItem('cf_user_profile');
+    if (savedUser && savedView && ['home', 'activity', 'chat', 'dashboard', 'profile', 'settings'].includes(savedView)) {
+      return savedView as any;
+    }
+    return savedUser ? 'home' : 'login';
+  });
   
   // Splash Screen State
   const [isSplashActive, setIsSplashActive] = useState<boolean>(true);
@@ -151,6 +162,88 @@ export default function App() {
     listenToUsers();
     return () => unsubscribe();
   }, []);
+
+  // ── Mutual Confirmation Completion Handlers ───────────────────────
+  const handleRequestCompletion = async (trip: Trip) => {
+    const nowIso = new Date().toISOString();
+    setTrips(prev => prev.map(t => t.id === trip.id ? { ...t, completionRequestedBy: user.email, completionRequestedAt: nowIso } : t));
+
+    try {
+      const { db } = await import('./config/firebase');
+      const { doc, updateDoc } = await import('firebase/firestore');
+      await updateDoc(doc(db, 'trips', trip.id), {
+        completionRequestedBy: user.email,
+        completionRequestedAt: nowIso
+      });
+
+      const { sendDbNotification } = await import('./services/notificationService');
+      const counterpartEmail = user.email === trip.clienteId ? trip.conductorId : trip.clienteId;
+      if (counterpartEmail) {
+        const requesterRoleName = user.role === 'conductor' ? 'El conductor' : 'El cliente';
+        sendDbNotification(
+          counterpartEmail,
+          '🏁 Solicitud de Finalización',
+          `${requesterRoleName} (${user.name}) solicita finalizar el servicio #${trip.id}. Ingresa a Actividad para confirmar la entrega.`,
+          `completion-req-${trip.id}`
+        );
+      }
+
+      setActiveToast({
+        id: `req-done-${Date.now()}`,
+        title: '🏁 Solicitud enviada',
+        message: 'Esperando confirmación de la contraparte para cerrar el servicio.',
+        type: 'info'
+      });
+    } catch (e) {
+      console.warn('Error requesting trip completion:', e);
+    }
+  };
+
+  const handleConfirmCompletion = async (trip: Trip) => {
+    await handleCompleteTrip(trip);
+  };
+
+  const handleRejectCompletion = async (trip: Trip) => {
+    const requesterEmail = trip.completionRequestedBy;
+    setTrips(prev => prev.map(t => {
+      if (t.id === trip.id) {
+        const copy = { ...t };
+        delete copy.completionRequestedBy;
+        delete copy.completionRequestedAt;
+        return copy;
+      }
+      return t;
+    }));
+
+    try {
+      const { db } = await import('./config/firebase');
+      const { doc, updateDoc, deleteField } = await import('firebase/firestore');
+      await updateDoc(doc(db, 'trips', trip.id), {
+        completionRequestedBy: deleteField(),
+        completionRequestedAt: deleteField()
+      });
+
+      if (requesterEmail) {
+        const { sendDbNotification } = await import('./services/notificationService');
+        sendDbNotification(
+          requesterEmail,
+          '❌ Solicitud Rechazada',
+          `La solicitud de finalización para el flete #${trip.id} fue rechazada por la contraparte.`,
+          `completion-rej-${trip.id}`,
+          'warning'
+        );
+      }
+
+      setActiveToast({
+        id: `req-rej-${Date.now()}`,
+        title: 'Solicitud rechazada',
+        message: 'Has rechazado la solicitud de finalización del servicio.',
+        type: 'info'
+      });
+    } catch (e) {
+      console.warn('Error rejecting trip completion:', e);
+    }
+  };
 
   const handleCompleteTrip = async (trip: Trip) => {
     setTrips(prev => prev.map(t => t.id === trip.id ? { ...t, status: 'COMPLETADO' } : t));
@@ -464,23 +557,14 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        // Always merge base auth data first and FORCE admin if email matches
+        // Merge base auth data first
         setUser(prev => ({
           ...prev,
           name: firebaseUser.displayName || prev.name,
           email: firebaseUser.email || prev.email,
           photoURL: firebaseUser.photoURL || prev.photoURL,
-          role: firebaseUser.email === 'lfalzatel@gmail.com' ? 'admin' : prev.role,
         }));
-        
-        // Auto-upgrade developer email to admin
-        if (firebaseUser.email === 'lfalzatel@gmail.com') {
-          try {
-            const { doc, updateDoc } = await import('firebase/firestore');
-            await updateDoc(doc(db, 'users', `${firebaseUser.uid}_conductor`), { role: 'admin' }).catch(() => null);
-            await updateDoc(doc(db, 'users', `${firebaseUser.uid}_cliente`), { role: 'admin' }).catch(() => null);
-          } catch (e) {}
-        }
+
         // Read the persisted Firestore profile to get isComplete and role-specific fields
         try {
           const lastRole = localStorage.getItem('cf_last_role') || 'cliente';
@@ -488,16 +572,16 @@ export default function App() {
           const snap = await getDoc(docRef);
           if (snap.exists()) {
             const firestoreProfile = snap.data() as UserProfile;
-            const forcedRole = firebaseUser.email === 'lfalzatel@gmail.com' ? 'admin' : (firestoreProfile.role || lastRole as any);
+            const activeRole = firestoreProfile.role || lastRole as any;
             setUser(prev => ({
               ...prev,
               ...firestoreProfile,
-              role: forcedRole,
+              role: activeRole,
               name: firebaseUser.displayName || firestoreProfile.name || prev.name,
               email: firebaseUser.email || firestoreProfile.email || prev.email,
               photoURL: firebaseUser.photoURL || firestoreProfile.photoURL || prev.photoURL,
             }));
-            if (firestoreProfile.isComplete || forcedRole === 'admin') {
+            if (firestoreProfile.isComplete || activeRole === 'admin') {
               setView('home');
             } else {
               setView('complete_profile');
@@ -509,17 +593,17 @@ export default function App() {
               const snap = await getDoc(docRef);
               if (snap.exists()) {
                 const firestoreProfile = snap.data() as UserProfile;
-                const forcedRole = firebaseUser.email === 'lfalzatel@gmail.com' ? 'admin' : (firestoreProfile.role || role as any);
+                const activeRole = firestoreProfile.role || role as any;
                 localStorage.setItem('cf_last_role', role);
                 setUser(prev => ({
                   ...prev,
                   ...firestoreProfile,
-                  role: forcedRole,
+                  role: activeRole,
                   name: firebaseUser.displayName || firestoreProfile.name || prev.name,
                   email: firebaseUser.email || firestoreProfile.email || prev.email,
                   photoURL: firebaseUser.photoURL || firestoreProfile.photoURL || prev.photoURL,
                 }));
-                if (firestoreProfile.isComplete || forcedRole === 'admin') {
+                if (firestoreProfile.isComplete || activeRole === 'admin') {
                   setView('home');
                 } else {
                   setView('complete_profile');
@@ -1030,6 +1114,8 @@ export default function App() {
       getSysTone('login'), 
       2600, 
       () => {
+        localStorage.setItem('cf_last_role', targetAccount.role);
+        localStorage.setItem('cf_user_profile', JSON.stringify(targetAccount));
         setLinkedAccounts(prev => {
           const filtered = prev.filter(acc => !(acc.email === targetAccount.email && acc.role === targetAccount.role));
           const exists = prev.some(acc => acc.email === user.email && acc.role === user.role);
@@ -1049,7 +1135,9 @@ export default function App() {
     try {
       const { loginWithGoogle } = await import('./services/authService');
       const targetRole = user.role === 'conductor' ? 'cliente' : 'conductor';
+      localStorage.setItem('cf_last_role', targetRole);
       const newProfile = await loginWithGoogle(targetRole);
+      localStorage.setItem('cf_user_profile', JSON.stringify(newProfile));
       
       triggerSplash(
         'Conectando nueva cuenta...', 
@@ -1150,7 +1238,18 @@ export default function App() {
           {view === 'login' && (
             <Login 
               currentRole={selectedRole}
-              onLoginSuccess={handleLoginSuccess} 
+              onLoginSuccess={handleLoginSuccess}
+              onOpenAdminLogin={() => setView('admin_login')}
+            />
+          )}
+
+          {view === 'admin_login' && (
+            <AdminLogin
+              onAdminLoginSuccess={(adminProfile) => {
+                setUser(adminProfile);
+                setView('dashboard');
+              }}
+              onBackToNormalLogin={() => setView('login')}
             />
           )}
 
@@ -1200,6 +1299,9 @@ export default function App() {
               }}
               onResolveCounterOffer={handleResolveCounterOffer}
               onCompleteTrip={handleCompleteTrip}
+              onRequestCompletion={handleRequestCompletion}
+              onConfirmCompletion={handleConfirmCompletion}
+              onRejectCompletion={handleRejectCompletion}
               onOpenRating={(trip) => setRatingTrip(trip)}
             />
           )}

@@ -8,9 +8,11 @@ import CargoFlowLogo from './CargoFlowLogo';
 interface LoginProps {
   currentRole?: UserRole;
   onLoginSuccess: (profile: any) => void;
+  onOpenAdminLogin?: () => void;
 }
 
-export default function Login({ currentRole = 'conductor', onLoginSuccess }: LoginProps) {
+export default function Login({ currentRole = 'conductor', onLoginSuccess, onOpenAdminLogin }: LoginProps) {
+  const [tapCount, setTapCount] = useState(0);
   const [selectedRole, setSelectedRole] = useState<UserRole>(currentRole);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [isLoading, setIsLoading] = useState(false);
@@ -135,11 +137,20 @@ export default function Login({ currentRole = 'conductor', onLoginSuccess }: Log
           <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-48 h-48 bg-emerald-500/15 blur-3xl rounded-full pointer-events-none" />
         )}
 
-        {/* Logo */}
+        {/* Logo (Tap 5 times for Admin Login trigger) */}
         <motion.div 
           animate={{ y: [0, -10, 0] }}
           transition={{ repeat: Infinity, duration: 3.6, ease: 'easeInOut' }}
-          className="mb-5 flex justify-center drop-shadow-2xl z-10"
+          onClick={() => {
+            const next = tapCount + 1;
+            setTapCount(next);
+            if (next >= 5 && onOpenAdminLogin) {
+              setTapCount(0);
+              onOpenAdminLogin();
+            }
+          }}
+          className="mb-5 flex justify-center drop-shadow-2xl z-10 cursor-pointer"
+          title="CargoFlow Logo"
         >
           <CargoFlowLogo size="xl" />
         </motion.div>
@@ -371,11 +382,22 @@ export default function Login({ currentRole = 'conductor', onLoginSuccess }: Log
         </form>
 
         {/* Terms Disclaimer */}
-        <p className={`text-[10px] font-medium text-center mt-5 z-10 ${
-          isDarkMode ? 'text-slate-400' : 'text-slate-500'
-        }`}>
-          Al continuar, aceptas los términos y condiciones de CargoFlow.
-        </p>
+        <div className="flex flex-col items-center gap-1.5 mt-5 z-10">
+          <p className={`text-[10px] font-medium text-center ${
+            isDarkMode ? 'text-slate-400' : 'text-slate-500'
+          }`}>
+            Al continuar, aceptas los términos y condiciones de CargoFlow.
+          </p>
+          {onOpenAdminLogin && (
+            <button
+              type="button"
+              onClick={onOpenAdminLogin}
+              className="text-[10px] font-bold text-slate-500 hover:text-blue-400 transition-colors opacity-60 hover:opacity-100 mt-1 cursor-pointer"
+            >
+              🔒 Portal Administrador
+            </button>
+          )}
+        </div>
       </motion.main>
     </div>
   );

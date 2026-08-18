@@ -13,10 +13,26 @@ interface ActivityProps {
   onEditTrip?: (trip: Trip) => void;
   onResolveCounterOffer?: (tripId: string, accept: boolean) => void;
   onCompleteTrip?: (trip: Trip) => void;
+  onRequestCompletion?: (trip: Trip) => void;
+  onConfirmCompletion?: (trip: Trip) => void;
+  onRejectCompletion?: (trip: Trip) => void;
   onOpenRating?: (trip: Trip) => void;
 }
 
-export default function Activity({ user, trips, usersList = [], onNavigateToChat, onCancelTrip, onEditTrip, onResolveCounterOffer, onCompleteTrip, onOpenRating }: ActivityProps) {
+export default function Activity({
+  user,
+  trips,
+  usersList = [],
+  onNavigateToChat,
+  onCancelTrip,
+  onEditTrip,
+  onResolveCounterOffer,
+  onCompleteTrip,
+  onRequestCompletion,
+  onConfirmCompletion,
+  onRejectCompletion,
+  onOpenRating
+}: ActivityProps) {
   const [filter, setFilter] = useState<'activos' | 'historial'>('activos');
 
   // Custom confirm modal state
@@ -333,34 +349,95 @@ export default function Activity({ user, trips, usersList = [], onNavigateToChat
                               </button>
                             </div>
                           ) : (
-                            trip.status === 'EN CAMINO' && (
-                              <div className="flex gap-2 items-center">
-                                <button
-                                  onClick={() => onNavigateToChat(trip)}
-                                  className="w-9 h-9 rounded-xl border border-blue-200 flex items-center justify-center text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
-                                  title="Chatear"
-                                >
-                                  <MessageSquare size={18} />
-                                </button>
-                                {onCompleteTrip && (
+                            trip.status === 'EN CAMINO' && (() => {
+                              const isParticipant = user.email === trip.clienteId || user.email === trip.conductorId;
+                              const hasRequest = Boolean(trip.completionRequestedBy);
+                              const iRequested = trip.completionRequestedBy === user.email;
+
+                              return (
+                                <div className="flex flex-wrap gap-2 items-center justify-end">
                                   <button
-                                    onClick={() => {
-                                      setConfirmModal({
-                                        open: true,
-                                        title: 'Finalizar servicio',
-                                        message: '¿Deseas dar por finalizado este servicio de flete? El cliente será notificado.',
-                                        confirmLabel: '✓ Finalizar',
-                                        variant: 'success',
-                                        onConfirm: () => { onCompleteTrip!(trip); closeConfirm(); },
-                                      });
-                                    }}
-                                    className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-extrabold text-xs shadow-md transition-all active:scale-95 flex items-center gap-1 cursor-pointer"
+                                    onClick={() => onNavigateToChat(trip)}
+                                    className="w-9 h-9 rounded-xl border border-blue-200 flex items-center justify-center text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
+                                    title="Chatear"
                                   >
-                                    ✓ Finalizar
+                                    <MessageSquare size={18} />
                                   </button>
-                                )}
-                              </div>
-                            )
+
+                                  {/* 1. No request yet -> Request Completion */}
+                                  {!hasRequest && isParticipant && onRequestCompletion && (
+                                    <button
+                                      onClick={() => {
+                                        setConfirmModal({
+                                          open: true,
+                                          title: 'Solicitar Finalización',
+                                          message: '¿Confirmas que la entrega fue realizada? Se enviará una notificación a la contraparte para confirmar.',
+                                          confirmLabel: 'Solicitar',
+                                          variant: 'info',
+                                          onConfirm: () => { onRequestCompletion(trip); closeConfirm(); },
+                                        });
+                                      }}
+                                      className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-extrabold text-xs shadow-md transition-all active:scale-95 flex items-center gap-1 cursor-pointer"
+                                    >
+                                      🏁 Solicitar Finalización
+                                    </button>
+                                  )}
+
+                                  {/* 2. I requested -> Waiting indicator */}
+                                  {hasRequest && iRequested && (
+                                    <span className="text-[10px] font-black text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl animate-pulse">
+                                      ⏳ Esperando confirmación de la contraparte...
+                                    </span>
+                                  )}
+
+                                  {/* 3. Counterpart requested -> Confirm / Reject Buttons */}
+                                  {hasRequest && !iRequested && isParticipant && (
+                                    <div className="flex gap-1.5 items-center">
+                                      <button
+                                        onClick={() => onRejectCompletion?.(trip)}
+                                        className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl font-bold text-xs transition-colors cursor-pointer"
+                                      >
+                                        Rechazar
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          setConfirmModal({
+                                            open: true,
+                                            title: 'Confirmar Entrega',
+                                            message: '¿Confirmas que la entrega fue recibida a satisfacción? Se cerrará el servicio y liberará el saldo.',
+                                            confirmLabel: '✓ Confirmar Entrega',
+                                            variant: 'success',
+                                            onConfirm: () => { onConfirmCompletion?.(trip); closeConfirm(); },
+                                          });
+                                        }}
+                                        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-extrabold text-xs shadow-md transition-all cursor-pointer"
+                                      >
+                                        ✓ Confirmar Entrega
+                                      </button>
+                                    </div>
+                                  )}
+
+                                  {/* 4. Admin Force Completion */}
+                                  {user.role === 'admin' && onCompleteTrip && (
+                                    <button
+                                      onClick={() => {
+                                        setConfirmModal({
+                                          open: true,
+                                          title: 'Forzar Finalización (Admin)',
+                                          message: '⚠️ Acción de Administrador: Cierra el servicio inmediatamente y transfiere los saldos.',
+                                          confirmLabel: 'Forzar Cierre',
+                                          variant: 'danger',
+                                          onConfirm: () => { onCompleteTrip(trip); closeConfirm(); },
+                                        });
+                                      }}
+                                      className="px-2.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold text-[10px] shadow-sm transition-all cursor-pointer"
+                                    >
+                                      ⚡ Forzar (Admin)
+                                    </button>
+                                  )}
+                                </div>
+                              );
+                            })()
                           )}
                         </>
                       ) : (

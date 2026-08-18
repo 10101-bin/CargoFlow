@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Trip, UserProfile } from '../types';
 import { HybridMapContainer } from '../maps/components/HybridMapContainer';
 import { COLOMBIA_LOGISTICS_PLACES } from '../maps/services/search/SearchCatalog';
+import { fleetSimulationService } from '../maps/services/fleet/FleetSimulationService';
 
 interface HomeProps {
   user: UserProfile;
@@ -77,13 +78,7 @@ export default function Home({
     );
   };
 
-  const [selectedTruck, setSelectedTruck] = useState<{
-    driverName: string;
-    vehicle: string;
-    plate: string;
-    location: string;
-    status: string;
-  } | null>(null);
+
 
   // Form State for creating a custom shipment
   const [origin, setOrigin] = useState('');
@@ -135,39 +130,11 @@ export default function Home({
     }
   }, [editingTrip]);
 
-  // Pre-configured trucks to interact with on the map
-  const trucksOnMap = [
-    {
-      id: 'truck-1',
-      driverName: 'Carlos Rodríguez',
-      vehicle: 'Kenworth T800',
-      plate: 'WYZ-789',
-      location: 'Suba, Bogotá',
-      status: 'Cargando mercancía',
-      top: '35%',
-      left: '20%',
-    },
-    {
-      id: 'truck-2',
-      driverName: 'Andrés López',
-      vehicle: 'Chevrolet NPR',
-      plate: 'SQR-456',
-      location: 'Usaquén, Bogotá',
-      status: 'En tránsito a Medellín',
-      top: '52%',
-      left: '65%',
-    },
-    {
-      id: 'truck-3',
-      driverName: 'Mauricio Gómez',
-      vehicle: 'Foton Super',
-      plate: 'KLO-123',
-      location: 'Barrios Unidos, Bogotá',
-      status: 'Esperando documentos',
-      top: '68%',
-      left: '48%',
-    },
-  ];
+  // Start real street-moving fleet simulation on Leaflet map
+  useEffect(() => {
+    fleetSimulationService.start();
+    return () => fleetSimulationService.stop();
+  }, []);
 
   const handleCreateShipmentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -405,74 +372,7 @@ export default function Home({
       <div className="absolute inset-0 z-0">
         <HybridMapContainer className="w-full h-full rounded-none border-none shadow-none" initialHeight="h-full" />
 
-        {/* Interactive Vehicle Markers */}
-        {trucksOnMap.map((trk) => (
-          <div
-            key={trk.id}
-            style={{ top: trk.top, left: trk.left }}
-            className="absolute z-10"
-          >
-            <button
-              onClick={() => setSelectedTruck(trk)}
-              className="relative group focus:outline-none"
-            >
-              <div className="absolute inset-0 bg-primary/20 rounded-full animate-ping" />
-              <div className="w-10 h-10 bg-white rounded-full shadow-[0px_4px_20px_rgba(0,0,0,0.15)] flex items-center justify-center border-2 border-primary-container hover:scale-110 active:scale-95 transition-all">
-                <Truck size={18} className="text-primary-container" fill="currentColor" />
-              </div>
-            </button>
-          </div>
-        ))}
       </div>
-
-      {/* Interactive Map Marker details sheet */}
-      <AnimatePresence>
-        {selectedTruck && (
-          <motion.div
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            className="absolute bottom-64 left-4 right-4 z-20"
-          >
-            <div className="bg-white rounded-2xl shadow-[0px_8px_30px_rgba(0,0,0,0.15)] p-4 border border-surface-container relative">
-              <button
-                onClick={() => setSelectedTruck(null)}
-                className="absolute top-3 right-3 p-1 hover:bg-surface-container rounded-full text-on-surface-variant"
-              >
-                <X size={16} />
-              </button>
-
-              <div className="flex gap-3">
-                <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-primary-container flex-shrink-0">
-                  <Truck size={24} fill="currentColor" />
-                </div>
-                <div>
-                  <h4 className="font-extrabold text-sm text-on-surface">{selectedTruck.driverName}</h4>
-                  <p className="text-xs text-on-surface-variant font-medium">
-                    {selectedTruck.vehicle} • <span className="font-bold">{selectedTruck.plate}</span>
-                  </p>
-                  <p className="text-[11px] text-[#FF9800] bg-[#FF9800]/10 px-2 py-0.5 rounded-full inline-block mt-1.5 font-bold">
-                    ● {selectedTruck.status}
-                  </p>
-                  <div className="flex gap-1 items-center mt-2 text-[10px] text-outline font-medium">
-                    <MapPin size={12} />
-                    <span>Última ubicación: {selectedTruck.location}</span>
-                  </div>
-                </div>
-              </div>
-              <button
-                onClick={() => {
-                  setSelectedTruck(null);
-                  onNavigateToView('chat');
-                }}
-                className="w-full mt-3 py-2 bg-primary-container hover:bg-primary text-white rounded-xl text-xs font-bold transition-all"
-              >
-                Escribir al Conductor
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Floating Header Card - Custom for Role */}
       <div className="absolute top-20 left-4 right-4 z-20">
