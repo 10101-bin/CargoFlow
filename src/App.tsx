@@ -591,11 +591,15 @@ export default function App() {
               email: firebaseUser.email || firestoreProfile.email || prev.email,
               photoURL: firebaseUser.photoURL || firestoreProfile.photoURL || prev.photoURL,
             }));
-            if (firestoreProfile.isComplete || activeRole === 'admin') {
-              setView('home');
-            } else {
-              setView('complete_profile');
-            }
+            // Only set view if currently on login / admin_login screens (don't interrupt active user navigation)
+            setView(currentView => {
+              if (currentView === 'login' || currentView === 'admin_login') {
+                return (firestoreProfile.isComplete || activeRole === 'admin') 
+                  ? (activeRole === 'admin' ? 'dashboard' : 'home') 
+                  : 'complete_profile';
+              }
+              return currentView;
+            });
           } else {
             // Fallback to checking both if lastRole didn't match (for new devices)
             for (const role of ['conductor', 'cliente']) {
@@ -613,11 +617,14 @@ export default function App() {
                   email: firebaseUser.email || firestoreProfile.email || prev.email,
                   photoURL: firebaseUser.photoURL || firestoreProfile.photoURL || prev.photoURL,
                 }));
-                if (firestoreProfile.isComplete || activeRole === 'admin') {
-                  setView('home');
-                } else {
-                  setView('complete_profile');
-                }
+                setView(currentView => {
+                  if (currentView === 'login' || currentView === 'admin_login') {
+                    return (firestoreProfile.isComplete || activeRole === 'admin') 
+                      ? (activeRole === 'admin' ? 'dashboard' : 'home') 
+                      : 'complete_profile';
+                  }
+                  return currentView;
+                });
                 break;
               }
             }
@@ -653,6 +660,7 @@ export default function App() {
     if (newView !== 'chat') {
       setActiveChatTrip(null);
     }
+    localStorage.setItem('cf_active_view', newView);
     setView(newView);
   };
 

@@ -379,24 +379,30 @@ export default function Login({ currentRole = 'conductor', onLoginSuccess, onOpe
               `Iniciar Sesión (${selectedRole === 'conductor' ? 'Conductor' : 'Cliente'})`
             )}
           </button>
+
+          {/* Explicit Admin Login Portal Option */}
+          {onOpenAdminLogin && (
+            <button
+              type="button"
+              onClick={onOpenAdminLogin}
+              className={`w-full h-10 mt-1 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer border ${
+                isDarkMode 
+                  ? 'bg-slate-900/60 border-slate-700/80 text-slate-300 hover:text-white hover:bg-slate-800' 
+                  : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              🔒 Portal Administrador
+            </button>
+          )}
         </form>
 
         {/* Terms Disclaimer */}
-        <div className="flex flex-col items-center gap-1.5 mt-5 z-10">
+        <div className="flex flex-col items-center gap-1.5 mt-4 z-10">
           <p className={`text-[10px] font-medium text-center ${
             isDarkMode ? 'text-slate-400' : 'text-slate-500'
           }`}>
             Al continuar, aceptas los términos y condiciones de CargoFlow.
           </p>
-          {onOpenAdminLogin && (
-            <button
-              type="button"
-              onClick={onOpenAdminLogin}
-              className="text-[10px] font-bold text-slate-500 hover:text-blue-400 transition-colors opacity-60 hover:opacity-100 mt-1 cursor-pointer"
-            >
-              🔒 Portal Administrador
-            </button>
-          )}
         </div>
       </motion.main>
     </div>
