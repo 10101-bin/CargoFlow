@@ -378,19 +378,19 @@ export default function Home({
       <div className="absolute top-20 left-4 right-4 z-20">
         {user.role === 'conductor' ? (
           /* DRIVER TOP CARD: SLEEK FLOATING BAR (UBER / RAPPI STYLE) */
-          <div className="w-full bg-[#09152b]/90 backdrop-blur-md text-white rounded-full p-2 px-3 shadow-[0px_10px_30px_rgba(0,0,0,0.3)] border border-slate-700/60 flex items-center justify-between gap-2">
+          <div className="w-full bg-gradient-to-r from-emerald-600 via-teal-600 to-blue-600 text-white rounded-2xl p-3 px-4 shadow-[0px_10px_35px_rgba(16,185,129,0.3)] border border-emerald-400/40 flex items-center justify-between gap-2 backdrop-blur-md">
             <div className="flex items-center gap-2 min-w-0">
-              <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${isAvailable ? 'bg-emerald-400 animate-pulse' : 'bg-slate-400'}`} />
-              <span className={`text-[11px] font-black uppercase truncate ${isAvailable ? 'text-emerald-400' : 'text-slate-400'}`}>
+              <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${isAvailable ? 'bg-emerald-300 animate-pulse' : 'bg-slate-300'}`} />
+              <span className={`text-[11px] font-black uppercase truncate ${isAvailable ? 'text-emerald-200' : 'text-slate-200'}`}>
                 {isAvailable ? 'CONECTADO' : 'INACTIVO'} • <span className="text-white font-extrabold">{activePlate}</span>
               </span>
             </div>
 
             <div className="flex items-center gap-2 flex-shrink-0 text-xs font-black">
-              <span className="text-emerald-400 bg-emerald-950/80 border border-emerald-500/30 px-2.5 py-1 rounded-full text-[11px]">
+              <span className="text-white bg-white/20 border border-white/30 px-2.5 py-1 rounded-full text-[11px]">
                 {todayEarnings > 0 ? '$' + todayEarnings.toLocaleString('es-CO') : '$0'}
               </span>
-              <span className="text-amber-400 bg-amber-950/80 border border-amber-500/30 px-2 py-1 rounded-full text-[11px] flex items-center gap-0.5">
+              <span className="text-amber-300 bg-black/20 border border-white/20 px-2 py-1 rounded-full text-[11px] flex items-center gap-0.5">
                 ★ {driverRating}
               </span>
             </div>
