@@ -138,8 +138,12 @@ class FleetSimulationService {
     const truck = this.trucks.get(id);
     if (!truck) return;
 
-    // Remove Leaflet marker from map
-    mapService.removeMarker(id);
+    // Remove Leaflet marker from map safely
+    try {
+      mapService.removeMarker(id);
+    } catch (e) {
+      console.warn('despawnTruck: could not remove marker', id, e);
+    }
     this.trucks.delete(id);
   }
 
@@ -164,13 +168,17 @@ class FleetSimulationService {
       const currentPos = truck.points[nextIndex];
 
       // Update Leaflet marker on map
-      mapService.addMarker({
-        id: truck.id,
-        position: currentPos,
-        title: `${truck.driverName} (${truck.plate})`,
-        subtitle: `${truck.vehicle} • ${truck.city} (${truck.status})`,
-        type: 'driver',
-      });
+      try {
+        mapService.addMarker({
+          id: truck.id,
+          position: currentPos,
+          title: `${truck.driverName} (${truck.plate})`,
+          subtitle: `${truck.vehicle} • ${truck.city} (${truck.status})`,
+          type: 'driver',
+        });
+      } catch (e) {
+        console.warn('stepFleet: could not update marker', truck.id, e);
+      }
     }
   }
 
@@ -199,9 +207,13 @@ class FleetSimulationService {
       this.lifecycleTimer = null;
     }
 
-    // Clean up all simulation markers on map
+    // Clean up all simulation markers on map safely
     for (const id of this.trucks.keys()) {
-      mapService.removeMarker(id);
+      try {
+        mapService.removeMarker(id);
+      } catch (e) {
+        console.warn('stop: could not remove marker', id, e);
+      }
     }
     this.trucks.clear();
     this.isRunning = false;

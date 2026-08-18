@@ -222,9 +222,25 @@ export class MapService {
   }
 
   public addMarker(marker: MapMarker): void {
-    this.markers.push(marker);
+    const existingIdx = this.markers.findIndex((m) => m.id === marker.id);
+    if (existingIdx >= 0) {
+      this.markers[existingIdx] = marker;
+    } else {
+      this.markers.push(marker);
+    }
     if (this.activeProvider) {
       this.activeProvider.setMarkers(this.markers);
+    }
+  }
+
+  public removeMarker(id: string): void {
+    this.markers = this.markers.filter((m) => m.id !== id);
+    if (this.activeProvider) {
+      try {
+        this.activeProvider.setMarkers(this.markers);
+      } catch (e) {
+        console.warn('removeMarker: error updating provider markers', e);
+      }
     }
   }
 
