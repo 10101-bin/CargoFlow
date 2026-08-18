@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Truck, User, Sun, Moon, Mail, Lock, Phone, UserCheck, ArrowRight } from 'lucide-react';
+import { Truck, User, Sun, Moon, Mail, Lock, Phone, UserCheck, ArrowRight, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { loginWithGoogle, registerWithEmail } from '../services/authService';
 import { UserRole } from '../types';
@@ -15,6 +15,7 @@ export default function Login({ currentRole = 'conductor', onLoginSuccess, onOpe
   const [tapCount, setTapCount] = useState(0);
   const [selectedRole, setSelectedRole] = useState<UserRole>(currentRole);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [isEmailFormOpen, setIsEmailFormOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
 
@@ -107,20 +108,6 @@ export default function Login({ currentRole = 'conductor', onLoginSuccess, onOpe
         <div className="absolute inset-0 pointer-events-none z-0 opacity-20 bg-[linear-gradient(to_bottom,transparent_50%,rgba(0,0,0,0.5)_50%)] bg-[length:100%_4px]" />
       )}
 
-      {/* Theme Toggle */}
-      <button
-        type="button"
-        onClick={() => setIsDarkMode(!isDarkMode)}
-        className={`absolute top-6 right-6 w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 active:scale-90 shadow-lg ${
-          isDarkMode 
-            ? 'bg-white/10 text-amber-400 border border-white/20 hover:bg-white/20' 
-            : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-100'
-        }`}
-        title={isDarkMode ? 'Cambiar a modo Día' : 'Cambiar a modo Noche'}
-      >
-        {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-      </button>
-
       {/* Main Glassmorphic Card */}
       <motion.main 
         initial={{ scale: 0.92, opacity: 0, y: 20 }}
@@ -132,6 +119,19 @@ export default function Login({ currentRole = 'conductor', onLoginSuccess, onOpe
             : 'bg-white border border-slate-200 shadow-2xl'
         }`}
       >
+        {/* Theme Toggle */}
+        <button
+          type="button"
+          onClick={() => setIsDarkMode(!isDarkMode)}
+          className={`absolute top-5 right-5 z-30 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 active:scale-90 shadow-md ${
+            isDarkMode 
+              ? 'bg-white/10 text-amber-400 border border-white/20 hover:bg-white/20' 
+              : 'bg-slate-100 text-slate-700 border border-slate-300 hover:bg-slate-200'
+          }`}
+          title={isDarkMode ? 'Cambiar a modo Día' : 'Cambiar a modo Noche'}
+        >
+          {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
         {/* Glow */}
         {isDarkMode && (
           <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-48 h-48 bg-emerald-500/15 blur-3xl rounded-full pointer-events-none" />
@@ -253,148 +253,169 @@ export default function Login({ currentRole = 'conductor', onLoginSuccess, onOpe
           </button>
         </div>
 
-        {/* Divider */}
-        <div className="w-full flex items-center gap-3 my-2 z-10">
-          <div className={`flex-1 h-[1px] ${isDarkMode ? 'bg-white/10' : 'bg-slate-200'}`} />
-          <span className={`text-[10px] font-bold uppercase tracking-widest ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-            o con correo
-          </span>
-          <div className={`flex-1 h-[1px] ${isDarkMode ? 'bg-white/10' : 'bg-slate-200'}`} />
+        {/* Toggle Button for Email Login Form */}
+        <div className="w-full mt-3 z-10">
+          <button
+            type="button"
+            onClick={() => setIsEmailFormOpen(v => !v)}
+            className={`w-full py-2.5 px-4 rounded-xl text-xs font-extrabold transition-all flex items-center justify-between border cursor-pointer ${
+              isDarkMode 
+                ? 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:text-white' 
+                : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <Mail size={15} />
+              <span>{isEmailFormOpen || authMode === 'register' ? 'Ingreso con correo y contraseña' : 'o ingresar con correo y contraseña'}</span>
+            </span>
+            <ChevronDown size={16} className={`transition-transform duration-300 ${isEmailFormOpen || authMode === 'register' ? 'rotate-180' : ''}`} />
+          </button>
         </div>
 
-        {/* Email Form */}
-        <form onSubmit={handleEmailSubmit} className="w-full z-10 mt-2 flex flex-col gap-3">
-          {/* Name Field for Registration */}
-          {authMode === 'register' && (
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <UserCheck size={16} className="text-slate-400" />
-              </div>
-              <input
-                type="text"
-                required
-                placeholder="Nombre completo"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className={`w-full h-11 pl-9 pr-3 rounded-xl border text-xs font-medium focus:outline-none transition-colors ${
-                  isDarkMode 
-                    ? 'bg-black/30 border-white/10 text-white placeholder-slate-500 focus:border-emerald-400' 
-                    : 'bg-white border-slate-300 text-slate-900 focus:border-blue-500'
-                }`}
-              />
-            </div>
-          )}
-
-          {/* Email Field */}
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Mail size={16} className="text-slate-400" />
-            </div>
-            <input
-              type="email"
-              required
-              placeholder="Correo electrónico (p.ej. prueba@gmail.com)"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className={`w-full h-11 pl-9 pr-3 rounded-xl border text-xs font-medium focus:outline-none transition-colors ${
-                isDarkMode 
-                  ? 'bg-black/30 border-white/10 text-white placeholder-slate-500 focus:border-emerald-400' 
-                  : 'bg-white border-slate-300 text-slate-900 focus:border-blue-500'
-              }`}
-            />
-          </div>
-
-          {/* Phone Field for Registration */}
-          {authMode === 'register' && (
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Phone size={16} className="text-slate-400" />
-              </div>
-              <input
-                type="tel"
-                placeholder="Teléfono cel. (p.ej. 300 123 4567)"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className={`w-full h-11 pl-9 pr-3 rounded-xl border text-xs font-medium focus:outline-none transition-colors ${
-                  isDarkMode 
-                    ? 'bg-black/30 border-white/10 text-white placeholder-slate-500 focus:border-emerald-400' 
-                    : 'bg-white border-slate-300 text-slate-900 focus:border-blue-500'
-                }`}
-              />
-            </div>
-          )}
-
-          {/* Password Field */}
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Lock size={16} className="text-slate-400" />
-            </div>
-            <input
-              type="password"
-              required
-              placeholder="Contraseña"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={`w-full h-11 pl-9 pr-3 rounded-xl border text-xs font-medium focus:outline-none transition-colors ${
-                isDarkMode 
-                  ? 'bg-black/30 border-white/10 text-white placeholder-slate-500 focus:border-emerald-400' 
-                  : 'bg-white border-slate-300 text-slate-900 focus:border-blue-500'
-              }`}
-            />
-          </div>
-
-          {/* Role Registration Explanation Box */}
-          {authMode === 'register' && (
-            <div className={`p-3 rounded-xl border text-[11px] font-medium leading-tight ${
-              selectedRole === 'conductor'
-                ? 'bg-emerald-950/40 border-emerald-500/30 text-emerald-300'
-                : 'bg-blue-950/40 border-blue-500/30 text-blue-300'
-            }`}>
-              {selectedRole === 'conductor' ? (
-                <span>🚛 <strong>Modo Conductor:</strong> Luego del registro podrás agregar vehículos (Placa, Modelo) y licencias desde tu Perfil para aceptar fletes.</span>
-              ) : (
-                <span>👤 <strong>Modo Cliente:</strong> Registro instantáneo. Podrás publicar fletes de inmediato sin necesidad de licencias ni vehículos.</span>
-              )}
-            </div>
-          )}
-
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={isLoading}
-            className={`w-full h-12 rounded-xl text-xs font-extrabold text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer shadow-lg ${
-              selectedRole === 'conductor'
-                ? 'bg-emerald-600 hover:bg-emerald-500'
-                : 'bg-blue-600 hover:bg-blue-500'
-            } ${isLoading ? 'opacity-75 cursor-wait' : ''}`}
-          >
-            {isLoading ? (
-              'Procesando...'
-            ) : authMode === 'register' ? (
-              <>
-                <span>Crear Cuenta como {selectedRole === 'conductor' ? 'Conductor' : 'Cliente'}</span>
-                <ArrowRight size={16} />
-              </>
-            ) : (
-              `Iniciar Sesión (${selectedRole === 'conductor' ? 'Conductor' : 'Cliente'})`
-            )}
-          </button>
-
-          {/* Explicit Admin Login Portal Option */}
-          {onOpenAdminLogin && (
-            <button
-              type="button"
-              onClick={onOpenAdminLogin}
-              className={`w-full h-10 mt-1 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer border ${
-                isDarkMode 
-                  ? 'bg-slate-900/60 border-slate-700/80 text-slate-300 hover:text-white hover:bg-slate-800' 
-                  : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'
-              }`}
+        {/* Collapsible Email Form */}
+        <AnimatePresence>
+          {(isEmailFormOpen || authMode === 'register') && (
+            <motion.form
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.25 }}
+              onSubmit={handleEmailSubmit}
+              className="w-full z-10 mt-3 flex flex-col gap-3 overflow-hidden"
             >
-              🔒 Portal Administrador
-            </button>
+              {/* Name Field for Registration */}
+              {authMode === 'register' && (
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <UserCheck size={16} className="text-slate-400" />
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Nombre completo"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className={`w-full h-11 pl-9 pr-3 rounded-xl border text-xs font-medium focus:outline-none transition-colors ${
+                      isDarkMode 
+                        ? 'bg-black/30 border-white/10 text-white placeholder-slate-500 focus:border-emerald-400' 
+                        : 'bg-white border-slate-300 text-slate-900 focus:border-blue-500'
+                    }`}
+                  />
+                </div>
+              )}
+
+              {/* Email Field */}
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Mail size={16} className="text-slate-400" />
+                </div>
+                <input
+                  type="email"
+                  required
+                  placeholder="Correo electrónico (p.ej. prueba@gmail.com)"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={`w-full h-11 pl-9 pr-3 rounded-xl border text-xs font-medium focus:outline-none transition-colors ${
+                    isDarkMode 
+                      ? 'bg-black/30 border-white/10 text-white placeholder-slate-500 focus:border-emerald-400' 
+                      : 'bg-white border-slate-300 text-slate-900 focus:border-blue-500'
+                  }`}
+                />
+              </div>
+
+              {/* Phone Field for Registration */}
+              {authMode === 'register' && (
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Phone size={16} className="text-slate-400" />
+                  </div>
+                  <input
+                    type="tel"
+                    placeholder="Teléfono cel. (p.ej. 300 123 4567)"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className={`w-full h-11 pl-9 pr-3 rounded-xl border text-xs font-medium focus:outline-none transition-colors ${
+                      isDarkMode 
+                        ? 'bg-black/30 border-white/10 text-white placeholder-slate-500 focus:border-emerald-400' 
+                        : 'bg-white border-slate-300 text-slate-900 focus:border-blue-500'
+                    }`}
+                  />
+                </div>
+              )}
+
+              {/* Password Field */}
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock size={16} className="text-slate-400" />
+                </div>
+                <input
+                  type="password"
+                  required
+                  placeholder="Contraseña"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className={`w-full h-11 pl-9 pr-3 rounded-xl border text-xs font-medium focus:outline-none transition-colors ${
+                    isDarkMode 
+                      ? 'bg-black/30 border-white/10 text-white placeholder-slate-500 focus:border-emerald-400' 
+                      : 'bg-white border-slate-300 text-slate-900 focus:border-blue-500'
+                  }`}
+                />
+              </div>
+
+              {/* Role Registration Explanation Box */}
+              {authMode === 'register' && (
+                <div className={`p-3 rounded-xl border text-[11px] font-medium leading-tight ${
+                  selectedRole === 'conductor'
+                    ? 'bg-emerald-950/40 border-emerald-500/30 text-emerald-300'
+                    : 'bg-blue-950/40 border-blue-500/30 text-blue-300'
+                }`}>
+                  {selectedRole === 'conductor' ? (
+                    <span>🚛 <strong>Modo Conductor:</strong> Luego del registro podrás agregar vehículos (Placa, Modelo) y licencias desde tu Perfil para aceptar fletes.</span>
+                  ) : (
+                    <span>👤 <strong>Modo Cliente:</strong> Registro instantáneo. Podrás publicar fletes de inmediato sin necesidad de licencias ni vehículos.</span>
+                  )}
+                </div>
+              )}
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className={`w-full h-12 rounded-xl text-xs font-extrabold text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer shadow-lg ${
+                  selectedRole === 'conductor'
+                    ? 'bg-emerald-600 hover:bg-emerald-500'
+                    : 'bg-blue-600 hover:bg-blue-500'
+                } ${isLoading ? 'opacity-75 cursor-wait' : ''}`}
+              >
+                {isLoading ? (
+                  'Procesando...'
+                ) : authMode === 'register' ? (
+                  <>
+                    <span>Crear Cuenta como {selectedRole === 'conductor' ? 'Conductor' : 'Cliente'}</span>
+                    <ArrowRight size={16} />
+                  </>
+                ) : (
+                  `Iniciar Sesión (${selectedRole === 'conductor' ? 'Conductor' : 'Cliente'})`
+                )}
+              </button>
+            </motion.form>
           )}
-        </form>
+        </AnimatePresence>
+
+        {/* Explicit Admin Login Portal Option */}
+        {onOpenAdminLogin && (
+          <button
+            type="button"
+            onClick={onOpenAdminLogin}
+            className={`w-full h-10 mt-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer border ${
+              isDarkMode 
+                ? 'bg-slate-900/60 border-slate-700/80 text-slate-300 hover:text-white hover:bg-slate-800' 
+                : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'
+            }`}
+          >
+            🔒 Portal Administrador
+          </button>
+        )}
 
         {/* Terms Disclaimer */}
         <div className="flex flex-col items-center gap-1.5 mt-4 z-10">
