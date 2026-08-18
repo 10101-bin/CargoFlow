@@ -111,7 +111,7 @@ export const MapControls: React.FC<MapControlsProps> = ({
     <div className="flex flex-col gap-2 w-full max-w-md pointer-events-auto">
       {/* Route & Search Panel (Collapsible) */}
       {isExpanded && (
-        <div className="bg-[#09152b]/95 border border-white/10 rounded-3xl shadow-2xl p-4 text-white flex flex-col gap-3 backdrop-blur-md animate-fade-in-up">
+        <div className="bg-gradient-to-br from-[#0b224d]/95 via-slate-900/95 to-emerald-950/95 border border-emerald-500/30 rounded-3xl shadow-2xl p-4 text-white flex flex-col gap-3 backdrop-blur-md animate-fade-in-up">
           <div className="flex items-center justify-between">
             <span className="text-xs font-black text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
               <span className="material-symbols-outlined text-sm">alt_route</span>
@@ -126,7 +126,7 @@ export const MapControls: React.FC<MapControlsProps> = ({
           </div>
         {/* Origin Field */}
         <div className="relative">
-          <div className="flex items-center bg-white/5 border border-white/10 rounded-2xl px-3 py-2 text-xs">
+          <div className="flex items-center bg-white/10 border border-white/15 rounded-2xl px-3 py-2 text-xs">
             <span className="material-symbols-outlined text-emerald-400 mr-2 text-base">my_location</span>
             <input
               type="text"
@@ -149,7 +149,7 @@ export const MapControls: React.FC<MapControlsProps> = ({
 
         {/* Destination Field */}
         <div className="relative">
-          <div className="flex items-center bg-white/5 border border-white/10 rounded-2xl px-3 py-2 text-xs">
+          <div className="flex items-center bg-white/10 border border-white/15 rounded-2xl px-3 py-2 text-xs">
             <span className="material-symbols-outlined text-rose-400 mr-2 text-base">flag</span>
             <input
               type="text"
@@ -176,7 +176,7 @@ export const MapControls: React.FC<MapControlsProps> = ({
 
           {/* Autocomplete Dropdown */}
           {activeInput && searchResults.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-[#09152b] border border-white/15 rounded-2xl shadow-2xl overflow-hidden z-30 max-h-56 overflow-y-auto divide-y divide-white/5">
+            <div className="absolute top-full left-0 right-0 mt-2 bg-[#0b224d] border border-emerald-500/30 rounded-2xl shadow-2xl overflow-hidden z-30 max-h-56 overflow-y-auto divide-y divide-white/10">
               {searchResults.map((res) => (
                 <button
                   key={res.id}
@@ -187,7 +187,7 @@ export const MapControls: React.FC<MapControlsProps> = ({
                     <span className="material-symbols-outlined text-xs">location_on</span>
                     {res.title}
                   </span>
-                  <span className="text-[11px] text-slate-400 truncate">{res.address}</span>
+                  <span className="text-[11px] text-slate-300 truncate">{res.address}</span>
                 </button>
               ))}
             </div>
@@ -198,7 +198,7 @@ export const MapControls: React.FC<MapControlsProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={handleTraceRoute}
-            className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs py-2.5 px-4 rounded-2xl shadow-lg transition flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
+            className="flex-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-blue-600 hover:from-emerald-400 hover:to-blue-500 text-white font-extrabold text-xs py-2.5 px-4 rounded-2xl shadow-lg transition flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
           >
             <span className="material-symbols-outlined text-lg">alt_route</span>
             <span>Trazar y Calcular Ruta</span>
@@ -209,7 +209,7 @@ export const MapControls: React.FC<MapControlsProps> = ({
 
       {/* Active Route Details Card & Turn-by-Turn Steps */}
       {activeRoute && (
-        <div className="bg-[#09152b]/95 border border-emerald-500/40 rounded-3xl p-4 shadow-2xl text-white flex flex-col gap-3 backdrop-blur-md animate-slide-down">
+        <div className="bg-gradient-to-br from-[#0b224d]/95 via-slate-900/95 to-emerald-950/95 border border-emerald-500/40 rounded-3xl p-4 shadow-2xl text-white flex flex-col gap-3 backdrop-blur-md animate-slide-down">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
@@ -217,26 +217,26 @@ export const MapControls: React.FC<MapControlsProps> = ({
               </span>
               <div>
                 <h4 className="text-xs font-bold text-emerald-300">Ruta Calculada con Éxito</h4>
-                <p className="text-[10px] text-slate-400">
+                <p className="text-[10px] text-slate-300">
                   {activeRoute.isOffline ? 'Ruta procesada offline (Haversine)' : 'Ruta OSRM Online'}
                 </p>
               </div>
             </div>
             <button
               onClick={onClearRoute}
-              className="text-slate-400 hover:text-white text-xs bg-white/10 px-2.5 py-1 rounded-xl"
+              className="text-slate-300 hover:text-white text-xs bg-white/10 border border-white/10 px-2.5 py-1 rounded-xl transition"
             >
               Limpiar
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 bg-white/5 border border-white/10 p-2.5 rounded-2xl text-center">
+          <div className="grid grid-cols-2 gap-2 bg-white/10 border border-white/10 p-2.5 rounded-2xl text-center">
             <div>
-              <p className="text-[10px] text-slate-400 uppercase font-semibold">Distancia Total</p>
+              <p className="text-[10px] text-slate-300 uppercase font-semibold">Distancia Total</p>
               <p className="text-base font-black text-white">{activeRoute.distanceKm} km</p>
             </div>
             <div>
-              <p className="text-[10px] text-slate-400 uppercase font-semibold">Tiempo Estimado</p>
+              <p className="text-[10px] text-slate-300 uppercase font-semibold">Tiempo Estimado</p>
               <p className="text-base font-black text-emerald-400">{activeRoute.durationMin} min</p>
             </div>
           </div>
@@ -283,7 +283,7 @@ export const MapControls: React.FC<MapControlsProps> = ({
         {/* Recenter GPS Location Button */}
         <button
           onClick={onCenterUserLocation}
-          className="bg-[#09152b]/95 hover:bg-[#09152b] text-white border border-white/10 rounded-2xl p-2.5 shadow-xl transition flex items-center gap-1.5 text-xs font-medium active:scale-95 cursor-pointer"
+          className="bg-gradient-to-r from-[#0b224d]/95 to-slate-900/95 hover:from-[#0b224d] hover:to-slate-800 text-white border border-emerald-500/30 rounded-2xl p-2.5 shadow-xl transition flex items-center gap-1.5 text-xs font-medium active:scale-95 cursor-pointer"
           title="Centrar en mi ubicación GPS"
         >
           <span className="material-symbols-outlined text-emerald-400 text-lg">my_location</span>
@@ -295,8 +295,8 @@ export const MapControls: React.FC<MapControlsProps> = ({
           onClick={() => setIsExpanded(!isExpanded)}
           className={`rounded-2xl p-2.5 shadow-xl border text-xs font-bold transition flex items-center gap-1.5 active:scale-95 cursor-pointer ${
             isExpanded 
-              ? 'bg-emerald-500 text-slate-950 border-emerald-400' 
-              : 'bg-[#09152b]/95 text-slate-200 border-white/10 hover:text-white'
+              ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-blue-600 text-white border-emerald-400' 
+              : 'bg-gradient-to-r from-[#0b224d]/95 to-slate-900/95 text-slate-200 border-emerald-500/30 hover:text-white'
           }`}
           title="Trazar y Calcular Ruta"
         >
@@ -308,7 +308,7 @@ export const MapControls: React.FC<MapControlsProps> = ({
         {onOpenRegionManager && (
           <button
             onClick={onOpenRegionManager}
-            className="bg-[#09152b]/95 hover:bg-[#09152b] text-white border border-white/10 rounded-2xl p-2.5 shadow-xl transition flex items-center gap-1 text-xs font-medium active:scale-95 cursor-pointer"
+            className="bg-gradient-to-r from-[#0b224d]/95 to-slate-900/95 hover:from-[#0b224d] hover:to-slate-800 text-white border border-emerald-500/30 rounded-2xl p-2.5 shadow-xl transition flex items-center gap-1 text-xs font-medium active:scale-95 cursor-pointer"
             title="Descargar Mapas Offline"
           >
             <span className="material-symbols-outlined text-emerald-400 text-base">download</span>
@@ -327,7 +327,7 @@ export const MapControls: React.FC<MapControlsProps> = ({
             className={`rounded-2xl p-2.5 shadow-xl border text-xs font-medium transition flex items-center gap-1 active:scale-95 ${
               trafficEnabled
                 ? 'bg-amber-500 text-slate-950 border-amber-400 font-bold'
-                : 'bg-[#09152b]/95 text-slate-300 border-white/10 hover:text-white'
+                : 'bg-gradient-to-r from-[#0b224d]/95 to-slate-900/95 text-slate-300 border-emerald-500/30 hover:text-white'
             }`}
             title="Tráfico en Tiempo Real"
           >
@@ -337,7 +337,7 @@ export const MapControls: React.FC<MapControlsProps> = ({
         )}
 
         {/* Provider Selector Menu Toggle */}
-        <div className="flex bg-[#09152b]/95 border border-white/10 rounded-2xl p-1 shadow-xl text-xs">
+        <div className="flex bg-[#0b224d]/95 border border-emerald-500/30 rounded-2xl p-1 shadow-xl text-xs">
           <button
             onClick={() => {
               onToggleAutoSwitch(false);
